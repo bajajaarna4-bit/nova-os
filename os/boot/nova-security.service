@@ -19,6 +19,11 @@ NoNewPrivileges=true
 ProtectSystem=strict
 ProtectHome=true
 PrivateTmp=true
+ProtectHostname=true
+LockPersonality=true
+RestrictRealtime=true
+RestrictSUIDSGID=true
+MemoryDenyWriteExecute=true
 # Needs /dev/audit socket to query audit subsystem
 PrivateDevices=false
 DeviceAllow=/dev/audit r

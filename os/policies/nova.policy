@@ -5,6 +5,7 @@
   <vendor>NOVA OS Project</vendor>
   <vendor_url>https://nova-os.dev</vendor_url>
 
+  <!-- 1. System Updates -->
   <action id="org.nova.updater.apply-update">
     <description>Apply atomic system update</description>
     <message>Authentication is required to deploy a new atomic system image</message>
@@ -15,6 +16,7 @@
     </defaults>
   </action>
 
+  <!-- 2. Permission Granting -->
   <action id="org.nova.permissions.grant">
     <description>Grant device permission to application</description>
     <message>Confirm permission delegation to application</message>
@@ -25,6 +27,18 @@
     </defaults>
   </action>
 
+  <!-- 3. Permission Revocation -->
+  <action id="org.nova.permissions.revoke">
+    <description>Revoke application permission</description>
+    <message>Confirm permission revocation</message>
+    <defaults>
+      <allow_any>no</allow_any>
+      <allow_inactive>no</allow_inactive>
+      <allow_active>auth_self</allow_active>
+    </defaults>
+  </action>
+
+  <!-- 4. SELinux Enforcement Control -->
   <action id="org.nova.security.enforce-selinux">
     <description>Modify SELinux system policy enforcement</description>
     <message>Administrative privileges are required to change SELinux enforcement mode</message>
@@ -32,6 +46,39 @@
       <allow_any>no</allow_any>
       <allow_inactive>no</allow_inactive>
       <allow_active>auth_admin</allow_active>
+    </defaults>
+  </action>
+
+  <!-- 5. Firewall Modification -->
+  <action id="org.nova.security.modify-firewall">
+    <description>Modify system nftables firewall policy or rules</description>
+    <message>Administrative privileges are required to modify firewall configuration</message>
+    <defaults>
+      <allow_any>no</allow_any>
+      <allow_inactive>no</allow_inactive>
+      <allow_active>auth_admin</allow_active>
+    </defaults>
+  </action>
+
+  <!-- 6. Consequential AI Tool Execution -->
+  <action id="org.nova.ai.execute-consequential-tool">
+    <description>Authorize consequential AI tool execution</description>
+    <message>Explicit user confirmation required for consequential AI action</message>
+    <defaults>
+      <allow_any>no</allow_any>
+      <allow_inactive>no</allow_inactive>
+      <allow_active>auth_self</allow_active>
+    </defaults>
+  </action>
+
+  <!-- 7. Core Power Management -->
+  <action id="org.nova.core.power-management">
+    <description>Reboot, shutdown, or suspend the system</description>
+    <message>Authentication is required to power off or reboot the system</message>
+    <defaults>
+      <allow_any>auth_admin</allow_any>
+      <allow_inactive>auth_admin</allow_inactive>
+      <allow_active>yes</allow_active>
     </defaults>
   </action>
 </policyconfig>

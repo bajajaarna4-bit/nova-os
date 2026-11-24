@@ -44,6 +44,11 @@ ProtectControlGroups=true
 ProtectKernelTunables=true
 ProtectKernelModules=true
 ProtectKernelLogs=true
+ProtectHostname=true
+LockPersonality=true
+RestrictRealtime=true
+RestrictSUIDSGID=true
+MemoryDenyWriteExecute=true
 # Isolate the network namespace (optional; remove if D-Bus over TCP is needed)
 # PrivateNetwork=true
 # Restrict writable paths to only what nova-core actually needs

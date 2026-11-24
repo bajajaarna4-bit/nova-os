@@ -19,11 +19,16 @@ Group=nova-ai
 # --- Security hardening ---
 # No new privileges; nova-ai-runtime is entirely unprivileged
 NoNewPrivileges=true
-# Relaxed to 'full' because the AI model files may live in /usr/share or /var
-ProtectSystem=full
+# Strict filesystem protection: /usr, /boot, /etc, /var read-only except ReadWritePaths
+ProtectSystem=strict
 # No access to home directories (AI models are in /var/lib/nova/models)
 ProtectHome=true
 PrivateTmp=true
+ProtectHostname=true
+LockPersonality=true
+RestrictRealtime=true
+RestrictSUIDSGID=true
+MemoryDenyWriteExecute=true
 # Needs GPU device access (/dev/dri) for hardware-accelerated inference
 # so PrivateDevices cannot be enabled globally; allow dri specifically
 PrivateDevices=false

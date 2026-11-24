@@ -1,31 +1,87 @@
 policy_module(nova, 0.1.0)
 
-# NOVA OS SELinux Type Enforcement Policy
+# =============================================================================
+# NOVA OS SELinux Type Enforcement Policy (Strict Least Privilege)
+# =============================================================================
 
 require {
     type unconfined_t;
     type systemd_system_t;
     type session_bus_t;
+    type shadow_t;
+    type etc_t;
+    type var_lib_t;
+    type var_log_t;
+    type proc_t;
+    type sysfs_t;
     class dbus send_msg;
-    class file { read write open getattr lock };
-    class dir { search read open getattr };
+    class file { read write open getattr lock ioctl create unlink };
+    class dir { search read write open getattr add_name remove_name };
+    class netlink_audit_socket { create bind read write nlmsg_read };
+    class unix_stream_socket { connectto };
 }
 
+# -----------------------------------------------------------------------------
+# Domain 1: nova-core
+# -----------------------------------------------------------------------------
 type nova_core_t;
 type nova_core_exec_t;
 init_daemon_domain(nova_core_t, nova_core_exec_t)
 
+# -----------------------------------------------------------------------------
+# Domain 2: nova-permissions
+# -----------------------------------------------------------------------------
 type nova_permissions_t;
 type nova_permissions_exec_t;
 init_daemon_domain(nova_permissions_t, nova_permissions_exec_t)
 
+# -----------------------------------------------------------------------------
+# Domain 3: nova-security
+# -----------------------------------------------------------------------------
+type nova_security_t;
+type nova_security_exec_t;
+init_daemon_domain(nova_security_t, nova_security_exec_t)
+
+# -----------------------------------------------------------------------------
+# Domain 4: nova-updater
+# -----------------------------------------------------------------------------
+type nova_updater_t;
+type nova_updater_exec_t;
+init_daemon_domain(nova_updater_t, nova_updater_exec_t)
+
+# -----------------------------------------------------------------------------
+# Domain 5: nova-ai-runtime (Strictly unprivileged AI sandbox)
+# -----------------------------------------------------------------------------
+type nova_ai_runtime_t;
+type nova_ai_runtime_exec_t;
+init_daemon_domain(nova_ai_runtime_t, nova_ai_runtime_exec_t)
+
+# -----------------------------------------------------------------------------
+# State file types
+# -----------------------------------------------------------------------------
 type nova_var_lib_t;
 files_type(nova_var_lib_t)
 
-# Allow core and permissions services to read/write state in /var/lib/nova
+type nova_audit_log_t;
+logging_log_file(nova_audit_log_t)
+
+# Permissions store access: ONLY nova_permissions_t can read/write
 allow nova_permissions_t nova_var_lib_t:dir { search read write open getattr add_name remove_name };
 allow nova_permissions_t nova_var_lib_t:file { read write create open getattr lock unlink };
 
+# Audit log access: append-only
+allow { nova_core_t nova_permissions_t nova_security_t nova_updater_t nova_ai_runtime_t } nova_audit_log_t:dir { search read open getattr add_name };
+allow { nova_core_t nova_permissions_t nova_security_t nova_updater_t nova_ai_runtime_t } nova_audit_log_t:file { read write open getattr append create };
+
+# Security monitor read access
+allow nova_security_t proc_t:dir { search read open getattr };
+allow nova_security_t proc_t:file { read open getattr };
+allow nova_security_t sysfs_t:dir { search read open getattr };
+allow nova_security_t sysfs_t:file { read open getattr };
+allow nova_security_t self:netlink_audit_socket { create bind read write nlmsg_read };
+
 # D-Bus IPC rules
-allow nova_core_t session_bus_t:dbus send_msg;
-allow nova_permissions_t session_bus_t:dbus send_msg;
+allow { nova_core_t nova_permissions_t nova_security_t nova_updater_t nova_ai_runtime_t } session_bus_t:dbus send_msg;
+
+# Strict negative confinement: nova_ai_runtime_t MUST NOT access password hashes or private credentials
+neverallow nova_ai_runtime_t shadow_t:file { read write open };

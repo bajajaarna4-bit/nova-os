@@ -30,6 +30,11 @@ ProtectControlGroups=true
 ProtectKernelTunables=true
 ProtectKernelModules=true
 ProtectKernelLogs=true
+ProtectHostname=true
+LockPersonality=true
+RestrictRealtime=true
+RestrictSUIDSGID=true
+MemoryDenyWriteExecute=true
 # Writable paths: permission database and runtime state
 ReadWritePaths=/var/lib/nova/permissions /run/nova
 InaccessiblePaths=/proc/kcore /proc/sysrq-trigger /sys/firmware

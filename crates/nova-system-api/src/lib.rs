@@ -210,6 +210,12 @@ pub struct AuditEvent {
     pub action: String,
     pub outcome: AuditOutcome,
     pub metadata: serde_json::Value,
+    #[serde(default)]
+    pub sequence: u64,
+    #[serde(default)]
+    pub previous_hash: String,
+    #[serde(default)]
+    pub hash: String,
 }
 
 impl AuditEvent {
@@ -228,6 +234,9 @@ impl AuditEvent {
             action: action.into(),
             outcome,
             metadata: serde_json::Value::Null,
+            sequence: 0,
+            previous_hash: "GENESIS".to_string(),
+            hash: String::new(),
         }
     }
 

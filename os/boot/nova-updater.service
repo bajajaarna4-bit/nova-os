@@ -37,6 +37,11 @@ ProtectControlGroups=true
 ProtectKernelTunables=true
 ProtectKernelModules=true
 ProtectKernelLogs=true
+ProtectHostname=true
+LockPersonality=true
+RestrictRealtime=true
+RestrictSUIDSGID=true
+MemoryDenyWriteExecute=true
 # Writable: update download cache and state file
 ReadWritePaths=/var/cache/nova/updates /var/lib/nova/updates /run/nova
 InaccessiblePaths=/proc/kcore /proc/sysrq-trigger /sys/firmware
