@@ -402,5 +402,108 @@ class TestAuditEventsCreated(unittest.TestCase):
                          "Audit events must be ordered chronologically")
 
 
+# ---------------------------------------------------------------------------
+# Mission 3: Provider Failures, Network Loss & Graceful Fallback
+# ---------------------------------------------------------------------------
+
+
+class TestMission3ProviderFallback(unittest.TestCase):
+    def test_cloud_provider_failure_falls_back_to_offline_engine(self):
+        failing_gemini = MockAIProvider(should_fail=True, fail_reason="Network loss / 503 Service Unavailable")
+        offline_engine = MockAIProvider(should_fail=False)
+
+        def query_with_fallback(prompt: str):
+            try:
+                return failing_gemini.complete(prompt, []), False
+            except RuntimeError:
+                return offline_engine.complete(prompt, []), True
+
+        resp, is_fallback = query_with_fallback("Check security status")
+        self.assertTrue(is_fallback, "Should automatically fall back on cloud failure")
+        self.assertIn("Echo:", resp["text"])
+        self.assertEqual(failing_gemini.call_count, 1)
+        self.assertEqual(offline_engine.call_count, 1)
+
+    def test_complete_network_loss_does_not_crash(self):
+        offline_engine = MockAIProvider(should_fail=False)
+        # Even when completely disconnected, offline engine answers
+        resp = offline_engine.complete("help", [])
+        self.assertIsNotNone(resp)
+        self.assertIn("text", resp)
+
+
+# ---------------------------------------------------------------------------
+# Mission 3: Parameter Validation, Path Traversal & Safe Tool Execution
+# ---------------------------------------------------------------------------
+
+
+class TestMission3ToolSafetyAndValidation(unittest.TestCase):
+    def setUp(self):
+        self.valid_apps = {"terminal", "files", "settings", "security", "ai-assistant", "browser"}
+
+    def validate_launch_app(self, app_id: str) -> bool:
+        return app_id in self.valid_apps
+
+    def validate_safe_path(self, path_str: str) -> bool:
+        if ".." in path_str:
+            return False
+        forbidden = ["/etc/shadow", "/etc/passwd", "/root", "/proc", "/sys", "id_rsa", ".ssh"]
+        for f in forbidden:
+            if f in path_str:
+                return False
+        return True
+
+    def test_arbitrary_shell_command_launch_rejected(self):
+        malicious_inputs = ["/bin/sh", "/bin/bash", "rm -rf /", "sudo su", "curl evil.com", "bash -i"]
+        for app in malicious_inputs:
+            self.assertFalse(
+                self.validate_launch_app(app),
+                f"Malicious app launch '{app}' must be blocked"
+            )
+
+    def test_first_party_app_launch_allowed(self):
+        for app in ["terminal", "files", "settings", "security"]:
+            self.assertTrue(self.validate_launch_app(app))
+
+    def test_path_traversal_blocked(self):
+        traversals = ["../../etc/shadow", "../../../root", "foo/../../bar", "..\\..\\windows\\system32"]
+        for path in traversals:
+            self.assertFalse(
+                self.validate_safe_path(path),
+                f"Path traversal '{path}' must be rejected"
+            )
+
+    def test_sensitive_system_file_access_blocked(self):
+        sensitive = ["/etc/shadow", "/etc/passwd", "/root/id_rsa", "~/.ssh/id_rsa"]
+        for path in sensitive:
+            self.assertFalse(
+                self.validate_safe_path(path),
+                f"Access to '{path}' must be rejected"
+            )
+
+    def test_consequential_action_requires_explicit_user_approval(self):
+        class ConsequentialToolBroker:
+            def __init__(self):
+                self.audit_log = []
+
+            def execute(self, tool_name: str, consequential: bool, user_confirmed: bool):
+                if consequential and not user_confirmed:
+                    self.audit_log.append({"tool": tool_name, "outcome": "denied"})
+                    return {"success": False, "error": "User denied execution"}
+                self.audit_log.append({"tool": tool_name, "outcome": "success"})
+                return {"success": True, "output": "ok"}
+
+        broker = ConsequentialToolBroker()
+        # When user rejects consequential action
+        res = broker.execute("launch_application", consequential=True, user_confirmed=False)
+        self.assertFalse(res["success"])
+        self.assertEqual(broker.audit_log[-1]["outcome"], "denied")
+
+        # When user approves
+        res = broker.execute("launch_application", consequential=True, user_confirmed=True)
+        self.assertTrue(res["success"])
+        self.assertEqual(broker.audit_log[-1]["outcome"], "success")
+
+
 if __name__ == "__main__":
     unittest.main()

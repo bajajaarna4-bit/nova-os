@@ -6,7 +6,7 @@ use reqwest::Client;
 use serde::{Deserialize, Serialize};
 use tracing::{debug, info};
 
-use crate::provider::AIProvider;
+use crate::provider::{AIProvider, ProviderKind};
 
 pub struct OllamaProvider {
     client: Client,
@@ -44,12 +44,30 @@ impl OllamaProvider {
 
 #[async_trait]
 impl AIProvider for OllamaProvider {
+    fn kind(&self) -> ProviderKind {
+        ProviderKind::Ollama
+    }
+
     fn name(&self) -> &str {
         "ollama"
     }
 
     fn model(&self) -> &str {
         &self.model
+    }
+
+    async fn is_available(&self) -> bool {
+        let url = format!("{}/api/tags", self.base_url);
+        match self
+            .client
+            .get(&url)
+            .timeout(std::time::Duration::from_millis(1500))
+            .send()
+            .await
+        {
+            Ok(resp) => resp.status().is_success(),
+            Err(_) => false,
+        }
     }
 
     async fn complete(&self, prompt: &str) -> Result<String> {
@@ -91,12 +109,20 @@ pub struct MockProvider;
 
 #[async_trait]
 impl AIProvider for MockProvider {
+    fn kind(&self) -> ProviderKind {
+        ProviderKind::Mock
+    }
+
     fn name(&self) -> &str {
         "mock"
     }
 
     fn model(&self) -> &str {
         "mock-v1"
+    }
+
+    async fn is_available(&self) -> bool {
+        true
     }
 
     async fn complete(&self, prompt: &str) -> Result<String> {

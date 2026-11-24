@@ -75,4 +75,30 @@ describe('NOVA OS Desktop Shell Core & Subsystems', () => {
     expect(res.toolCall).toBeDefined();
     expect(res.toolCall?.name).toBe('get_system_info');
   });
+
+  it('manages AI provider modes and logs audit events', async () => {
+    novaApi.setProviderMode('offline');
+    expect(novaApi.getProviderMode()).toBe('offline');
+
+    const res = await novaApi.queryAI('Launch Terminal');
+    expect(res.toolCall).toBeDefined();
+    expect(res.toolCall?.name).toBe('launch_application');
+    expect(res.toolCall?.consequential).toBe(true);
+
+    const logs = novaApi.getAuditLog();
+    expect(logs.length).toBeGreaterThan(0);
+    const last = logs[0];
+    expect(last.eventType).toBe('ai_query');
+  });
+
+  it('handles simulated network loss and denies unauthorized execution', async () => {
+    novaApi.setSimulateNetworkLoss(true);
+    expect(novaApi.isNetworkLossSimulated()).toBe(true);
+
+    const execDenied = await novaApi.executeTool('launch_application', { app_id: 'terminal' }, false);
+    expect(execDenied.success).toBe(false);
+    expect(execDenied.error).toContain('denied');
+
+    novaApi.setSimulateNetworkLoss(false);
+  });
 });

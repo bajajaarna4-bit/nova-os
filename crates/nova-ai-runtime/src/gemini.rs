@@ -6,7 +6,7 @@ use reqwest::Client;
 use serde::{Deserialize, Serialize};
 use tracing::{debug, info};
 
-use crate::provider::AIProvider;
+use crate::provider::{AIProvider, ProviderKind};
 
 pub struct GeminiProvider {
     client: Client,
@@ -74,12 +74,20 @@ impl GeminiProvider {
 
 #[async_trait]
 impl AIProvider for GeminiProvider {
+    fn kind(&self) -> ProviderKind {
+        ProviderKind::Gemini
+    }
+
     fn name(&self) -> &str {
         "gemini"
     }
 
     fn model(&self) -> &str {
         &self.model
+    }
+
+    async fn is_available(&self) -> bool {
+        !self.api_key.trim().is_empty()
     }
 
     async fn complete(&self, prompt: &str) -> Result<String> {
