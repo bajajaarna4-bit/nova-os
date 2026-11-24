@@ -5,8 +5,9 @@
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
 [![Release](https://img.shields.io/badge/release-v0.1.0-8b5cf6.svg)](docs/RELEASE_NOTES_v0.1.0.md)
 [![CI Build](https://img.shields.io/badge/build-passing-brightgreen.svg)](.github/workflows/build.yml)
-[![Tests](https://img.shields.io/badge/tests-135%20passed-success.svg)](tests/integration/)
+[![Tests](https://img.shields.io/badge/tests-139%20passed-success.svg)](tests/integration/)
 [![Security](https://img.shields.io/badge/security-SELinux%20Enforcing%20%2B%20Zero--Trust-blueviolet.svg)](docs/SECURITY_ASSESSMENT.md)
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/bajajaarna4-bit/nova-os)
 
 ---
 

@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: nova-os
+    runtime: node
+    plan: free
+    region: oregon
+    buildCommand: node -e "console.log('Building NOVA OS Web Environment')"
+    startCommand: node server.js
+    healthCheckPath: /healthz
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production

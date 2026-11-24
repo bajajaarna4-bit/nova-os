@@ -1,0 +1,16 @@
+{
+  "name": "nova-os",
+  "version": "0.1.0",
+  "description": "NOVA OS — Zero-Trust, AI-Native Operating System Distribution",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "build": "node -e \"console.log('NOVA OS Web Showcase Ready')\""
+  },
+  "keywords": ["operating-system", "linux", "zero-trust", "ai", "wayland", "rust"],
+  "author": "NOVA OS Project",
+  "license": "Apache-2.0",
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
