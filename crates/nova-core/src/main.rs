@@ -1,19 +1,35 @@
-// nova-core/src/main.rs — NOVA OS Core D-Bus Service
+// nova-core/src/main.rs — NOVA OS Core Service
 
 use anyhow::Result;
 use nova_core::{resource_monitor, system_info};
 use nova_system_api::{ResourceUsage, ServiceState, ServiceStatus, SystemInfo};
 use tracing::{error, info};
 use tracing_subscriber::EnvFilter;
+
+#[cfg(unix)]
 use zbus::{connection, interface};
 
 struct CoreService;
 
+impl CoreService {
+    pub async fn get_system_info_impl(&self) -> Result<SystemInfo> {
+        system_info::gather_system_info().await
+    }
+
+    pub async fn get_resource_usage_impl(&self) -> Result<ResourceUsage> {
+        resource_monitor::collect_resource_usage().await
+    }
+
+    pub async fn get_service_status_impl(&self, name: &str) -> ServiceStatus {
+        query_service_status(name).await
+    }
+}
+
+#[cfg(unix)]
 #[interface(name = "org.nova.Core")]
 impl CoreService {
-    /// Return basic system information.
     async fn get_system_info(&self) -> zbus::fdo::Result<String> {
-        match system_info::gather_system_info().await {
+        match self.get_system_info_impl().await {
             Ok(info) => serde_json::to_string(&info)
                 .map_err(|e| zbus::fdo::Error::Failed(e.to_string())),
             Err(e) => {
@@ -23,9 +39,8 @@ impl CoreService {
         }
     }
 
-    /// Return current resource usage.
     async fn get_resource_usage(&self) -> zbus::fdo::Result<String> {
-        match resource_monitor::collect_resource_usage().await {
+        match self.get_resource_usage_impl().await {
             Ok(usage) => serde_json::to_string(&usage)
                 .map_err(|e| zbus::fdo::Error::Failed(e.to_string())),
             Err(e) => {
@@ -35,14 +50,12 @@ impl CoreService {
         }
     }
 
-    /// Return status for a named service (queries systemd via /proc).
     async fn get_service_status(&self, name: String) -> zbus::fdo::Result<String> {
-        let status = query_service_status(&name).await;
+        let status = self.get_service_status_impl(&name).await;
         serde_json::to_string(&status).map_err(|e| zbus::fdo::Error::Failed(e.to_string()))
     }
 }
 
-/// Query service status. On Linux tries /proc/<pid>/comm for running processes.
 async fn query_service_status(name: &str) -> ServiceStatus {
     #[cfg(target_os = "linux")]
     {
@@ -61,7 +74,6 @@ async fn query_service_status(name: &str) -> ServiceStatus {
 
 #[cfg(target_os = "linux")]
 async fn query_service_linux(name: &str) -> ServiceStatus {
-    // Try to find a process matching the name in /proc
     if let Ok(mut entries) = tokio::fs::read_dir("/proc").await {
         while let Ok(Some(entry)) = entries.next_entry().await {
             let fname = entry.file_name();
@@ -92,27 +104,26 @@ async fn query_service_linux(name: &str) -> ServiceStatus {
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    // Initialize tracing
     tracing_subscriber::fmt()
         .with_env_filter(
             EnvFilter::try_from_default_env().unwrap_or_else(|_| EnvFilter::new("info")),
         )
         .init();
 
-    info!("Starting nova-core D-Bus service");
+    info!("Starting nova-core service");
 
-    // Build connection and serve
-    let _conn = connection::Builder::session()?
-        .name("org.nova.Core")?
-        .serve_at("/org/nova/Core", CoreService)?
-        .build()
-        .await?;
+    let service = CoreService;
 
-    info!("nova-core service registered on session bus as org.nova.Core");
-
-    // Wait for SIGTERM / SIGINT
     #[cfg(unix)]
     {
+        let _conn = connection::Builder::session()?
+            .name("org.nova.Core")?
+            .serve_at("/org/nova/Core", service)?
+            .build()
+            .await?;
+
+        info!("nova-core registered on session bus as org.nova.Core");
+
         use tokio::signal::unix::{signal, SignalKind};
         let mut sigterm = signal(SignalKind::terminate())?;
         let mut sigint = signal(SignalKind::interrupt())?;
@@ -121,8 +132,12 @@ async fn main() -> Result<()> {
             _ = sigint.recv()  => { info!("Received SIGINT, shutting down"); }
         }
     }
+
     #[cfg(not(unix))]
     {
+        info!("Running nova-core in standalone mode (non-Linux platform)");
+        let info = service.get_system_info_impl().await?;
+        info!("System info gathered: {:?}", info);
         tokio::signal::ctrl_c().await?;
         info!("Received Ctrl-C, shutting down");
     }

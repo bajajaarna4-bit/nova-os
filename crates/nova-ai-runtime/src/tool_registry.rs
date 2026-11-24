@@ -1,7 +1,7 @@
 // nova-ai-runtime/src/tool_registry.rs
 // Strict allowlist-based tool registry with mandatory permission checks
 
-use anyhow::{anyhow, Result};
+use anyhow::Result;
 use nova_system_api::{AIToolCall, AIToolResult};
 use serde_json::Value;
 use std::collections::HashMap;
