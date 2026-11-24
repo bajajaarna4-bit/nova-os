@@ -134,25 +134,13 @@ impl Default for PermissionDecision {
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct Permission {
     pub app_id: String,
     pub permission_type: String,
     pub granted: bool,
     pub granted_at: Option<DateTime<Utc>>,
     pub revoked_at: Option<DateTime<Utc>>,
-}
-
-impl Default for Permission {
-    fn default() -> Self {
-        Self {
-            app_id: String::new(),
-            permission_type: String::new(),
-            granted: false,
-            granted_at: None,
-            revoked_at: None,
-        }
-    }
 }
 
 // Known permission types

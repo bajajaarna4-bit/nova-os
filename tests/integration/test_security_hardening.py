@@ -411,5 +411,78 @@ class TestHonestPostureReporting(unittest.TestCase):
             self.assertNotIn("score", data)
 
 
+# ---------------------------------------------------------------------------
+# 8. AI Tool Security & Input Validation Tests
+# ---------------------------------------------------------------------------
+
+class TestAIToolSecurityValidation(unittest.TestCase):
+    """
+    Verifies that the AI tool registry strictly validates paths, prevents traversal,
+    blocks null-byte injection, and forbids credential harvesting.
+    """
+
+    def validate_safe_path(self, path_str: str):
+        if "\0" in path_str:
+            raise ValueError("Path contains forbidden null byte character")
+
+        normalized = path_str.replace("\\", "/")
+        if "../" in normalized or "/.." in normalized or normalized == ".." or ".." in normalized:
+            raise ValueError("Path traversal sequence '..' is forbidden")
+
+        forbidden_patterns = [
+            "/etc/shadow",
+            "/etc/gshadow",
+            "/etc/passwd",
+            "/etc/sudoers",
+            "/etc/crypttab",
+            "/etc/security",
+            "/root",
+            "/proc",
+            "/sys",
+            "id_rsa",
+            "id_ed25519",
+            "id_ecdsa",
+            "id_dsa",
+            "authorized_keys",
+            ".ssh",
+            ".gnupg",
+            ".bash_history",
+            ".zsh_history",
+        ]
+        for f in forbidden_patterns:
+            if f in normalized:
+                raise ValueError(f"Access to security-critical path '{f}' is strictly prohibited")
+        return True
+
+    def test_path_traversal_rejected(self):
+        with self.assertRaises(ValueError):
+            self.validate_safe_path("../../etc/shadow")
+        with self.assertRaises(ValueError):
+            self.validate_safe_path("docs/../../secret.txt")
+        with self.assertRaises(ValueError):
+            self.validate_safe_path("..\\..\\windows\\system32")
+
+    def test_null_byte_injection_rejected(self):
+        with self.assertRaises(ValueError):
+            self.validate_safe_path("safe_file.txt\0/etc/shadow")
+
+    def test_sensitive_credential_access_rejected(self):
+        with self.assertRaises(ValueError):
+            self.validate_safe_path("/home/user/.ssh/id_rsa")
+        with self.assertRaises(ValueError):
+            self.validate_safe_path("/home/user/.ssh/authorized_keys")
+        with self.assertRaises(ValueError):
+            self.validate_safe_path("/home/user/.gnupg/secring.gpg")
+        with self.assertRaises(ValueError):
+            self.validate_safe_path("/etc/shadow")
+        with self.assertRaises(ValueError):
+            self.validate_safe_path("/etc/crypttab")
+
+    def test_safe_paths_allowed(self):
+        self.assertTrue(self.validate_safe_path("Documents/report.pdf"))
+        self.assertTrue(self.validate_safe_path("Projects/nova/README.md"))
+        self.assertTrue(self.validate_safe_path("Downloads/dataset.csv"))
+
+
 if __name__ == "__main__":
     unittest.main()

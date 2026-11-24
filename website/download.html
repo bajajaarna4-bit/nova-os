@@ -105,7 +105,7 @@
       <div>
         <label style="font-size:13px;font-weight:600;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.5px;">SHA-256 Checksum</label>
         <div class="checksum-box">
-          <span id="sha256-val">477a7bb5d2f01b57244579121dbb8077ffc715e617181c45074806b2ef568e88</span>
+          <span id="sha256-val">501d8a0190de04bd4abebc4d84cf4c9e0ee57e7d7328698336a76073749d9630</span>
           <button class="copy-btn" onclick="navigator.clipboard.writeText(document.getElementById('sha256-val').innerText); this.innerText='Copied!'; setTimeout(()=>this.innerText='Copy', 2000);">Copy</button>
         </div>
       </div>
@@ -150,7 +150,7 @@
       <p style="font-size:14px;color:var(--text-secondary);margin-bottom:16px;">
         Verify the integrity of your download before booting:
       </p>
-      <pre style="background:rgba(0,0,0,0.5);padding:14px;border-radius:var(--radius-sm);color:var(--violet-300);font-size:13px;overflow-x:auto;">echo "477a7bb5d2f01b57244579121dbb8077ffc715e617181c45074806b2ef568e88  nova-os-0.1.0-x86_64.iso" | sha256sum -c -</pre>
+      <pre style="background:rgba(0,0,0,0.5);padding:14px;border-radius:var(--radius-sm);color:var(--violet-300);font-size:13px;overflow-x:auto;">echo "501d8a0190de04bd4abebc4d84cf4c9e0ee57e7d7328698336a76073749d9630  nova-os-0.1.0-x86_64.iso" | sha256sum -c -</pre>
 
       <p style="font-size:14px;color:var(--text-secondary);margin-top:20px;margin-bottom:12px;">
         To test the image instantly in QEMU/KVM:

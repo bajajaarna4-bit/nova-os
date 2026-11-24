@@ -63,7 +63,7 @@ Every component in NOVA OS has been designed, implemented, and rigorously tested
 
 | File | Size | SHA-256 Checksum | Description |
 | :--- | :--- | :--- | :--- |
-| **`nova-os-0.1.0-x86_64.iso`** | ~4.1 MB (core base) | `477a7bb5d2f01b57244579121dbb8077ffc715e617181c45074806b2ef568e88` | Dual UEFI + BIOS Bootable Live & Installer ISO |
+| **`nova-os-0.1.0-x86_64.iso`** | ~4.1 MB (core base) | `501d8a0190de04bd4abebc4d84cf4c9e0ee57e7d7328698336a76073749d9630` | Dual UEFI + BIOS Bootable Live & Installer ISO |
 | **`SHA256SUMS`** | 92 B | — | Cryptographic SHA-256 hashes of all release files |
 | **`SHA512SUMS`** | 156 B | — | Cryptographic SHA-512 hashes of all release files |
 | **`release-manifest.json`** | 1.3 KB | — | Machine-readable release metadata & hardware specifications |

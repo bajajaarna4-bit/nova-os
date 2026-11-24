@@ -116,36 +116,36 @@ impl ProviderManager {
             ProviderMode::GeminiOnly => {
                 if let Some(gemini) = &self.gemini {
                     let text = gemini.complete(prompt).await?;
-                    return Ok(QueryResult {
+                    Ok(QueryResult {
                         text,
                         provider_used: ProviderKind::Gemini,
                         model_used: gemini.model().to_string(),
                         is_fallback: false,
                         latency_ms: start.elapsed().as_millis() as u64,
-                    });
+                    })
                 } else {
                     anyhow::bail!("Gemini provider is not configured (missing NOVA_GEMINI_API_KEY)");
                 }
             }
             ProviderMode::OllamaOnly => {
                 let text = self.ollama.complete(prompt).await?;
-                return Ok(QueryResult {
+                Ok(QueryResult {
                     text,
                     provider_used: ProviderKind::Ollama,
                     model_used: self.ollama.model().to_string(),
                     is_fallback: false,
                     latency_ms: start.elapsed().as_millis() as u64,
-                });
+                })
             }
             ProviderMode::OfflineOnly => {
                 let text = self.offline.complete(prompt).await?;
-                return Ok(QueryResult {
+                Ok(QueryResult {
                     text,
                     provider_used: ProviderKind::OfflineBuiltin,
                     model_used: self.offline.model().to_string(),
                     is_fallback: false,
                     latency_ms: start.elapsed().as_millis() as u64,
-                });
+                })
             }
             ProviderMode::Auto => {
                 // Tier 1: Try Gemini if configured and reachable

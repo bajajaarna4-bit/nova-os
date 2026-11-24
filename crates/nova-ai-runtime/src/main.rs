@@ -68,7 +68,7 @@ impl AIRuntimeService {
         let audit_event = AuditEvent::new(
             AuditEventType::AIQuery,
             "org.nova.assistant",
-            &format!("{}:{}", result.provider_used, result.model_used),
+            format!("{}:{}", result.provider_used, result.model_used),
             "complete_query",
             AuditOutcome::Success,
         );

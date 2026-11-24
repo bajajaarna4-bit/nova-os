@@ -32,13 +32,13 @@ sha256sum -c SHA256SUMS
 
 # Or compare directly
 sha256sum nova-os-0.1.0-x86_64.iso
-# Expected output: 477a7bb5d2f01b57244579121dbb8077ffc715e617181c45074806b2ef568e88
+# Expected output: 501d8a0190de04bd4abebc4d84cf4c9e0ee57e7d7328698336a76073749d9630
 ```
 
 ### Windows (PowerShell)
 ```powershell
 Get-FileHash -Algorithm SHA256 .\nova-os-0.1.0-x86_64.iso
-# Hash must equal: 477A7BB5D2F01B57244579121DBB8077FFC715E617181C45074806B2EF568E88
+# Hash must equal: 501D8A0190DE04BD4ABEBC4D84CF4C9E0EE57E7D7328698336A76073749D9630
 ```
 
 ---

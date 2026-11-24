@@ -17,7 +17,7 @@ sha256sum -c SHA256SUMS
 ```
 
 Expected SHA-256:
-`477a7bb5d2f01b57244579121dbb8077ffc715e617181c45074806b2ef568e88  nova-os-0.1.0-x86_64.iso`
+`501d8a0190de04bd4abebc4d84cf4c9e0ee57e7d7328698336a76073749d9630  nova-os-0.1.0-x86_64.iso`
 
 ## Booting in QEMU / KVM
 

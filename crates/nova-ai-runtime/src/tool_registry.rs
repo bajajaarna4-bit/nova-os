@@ -4,7 +4,6 @@ use anyhow::{bail, Result};
 use nova_system_api::{AIToolCall, AIToolResult};
 use serde_json::Value;
 use std::collections::HashMap;
-use std::path::Path;
 use std::sync::Arc;
 use tracing::{info, warn};
 
@@ -177,29 +176,40 @@ impl ToolRegistry {
         Ok(())
     }
 
-    /// Validate path to prevent path traversal and unauthorized root inspection
+    /// Validate path to prevent path traversal, null-byte injection, and unauthorized credential inspection
     pub fn validate_safe_path(path_str: &str) -> Result<()> {
-        if path_str.contains("..") {
+        if path_str.contains('\0') {
+            bail!("Path contains forbidden null byte character");
+        }
+
+        let normalized = path_str.replace('\\', "/");
+        if normalized.contains("../") || normalized.contains("/..") || normalized == ".." || normalized.contains("..") {
             bail!("Path traversal sequence '..' is forbidden");
         }
 
-        let p = Path::new(path_str);
-        if let Some(_first_comp) = p.components().next() {
-            let forbidden_prefixes = [
-                "/etc/shadow",
-                "/etc/passwd",
-                "/etc/sudoers",
-                "/root",
-                "/proc",
-                "/sys",
-                "id_rsa",
-                ".ssh",
-                ".gnupg",
-            ];
-            for f in forbidden_prefixes {
-                if path_str.contains(f) {
-                    bail!("Access to security-critical path '{}' is strictly prohibited", f);
-                }
+        let forbidden_patterns = [
+            "/etc/shadow",
+            "/etc/gshadow",
+            "/etc/passwd",
+            "/etc/sudoers",
+            "/etc/crypttab",
+            "/etc/security",
+            "/root",
+            "/proc",
+            "/sys",
+            "id_rsa",
+            "id_ed25519",
+            "id_ecdsa",
+            "id_dsa",
+            "authorized_keys",
+            ".ssh",
+            ".gnupg",
+            ".bash_history",
+            ".zsh_history",
+        ];
+        for f in forbidden_patterns {
+            if normalized.contains(f) {
+                bail!("Access to security-critical path '{}' is strictly prohibited", f);
             }
         }
         Ok(())
