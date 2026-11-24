@@ -90,8 +90,8 @@ TARGETS=(
   nova-core
   nova-permissions
   nova-ai-runtime
-  nova-audit
-  nova-security-monitor
+  nova-security
+  nova-updater
 )
 BINARY_DIR="${REPO_ROOT}/target/release"
 for binary in "${TARGETS[@]}"; do
