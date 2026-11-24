@@ -85,6 +85,7 @@ function novaSystemApiPlugin(): Plugin {
 }
 
 export default defineConfig({
+  base: './',
   root: '.',
   plugins: [novaSystemApiPlugin()],
   build: {
