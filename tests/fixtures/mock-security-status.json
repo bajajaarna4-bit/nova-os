@@ -1,0 +1,6 @@
+{
+  "secure_boot_enabled": null,
+  "selinux_mode": "Unknown",
+  "dm_crypt_active": null,
+  "firewall_active": true
+}

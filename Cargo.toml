@@ -1,0 +1,70 @@
+[workspace]
+resolver = "2"
+
+members = [
+    "crates/nova-core",
+    "crates/nova-system-api",
+    "crates/nova-security",
+    "crates/nova-permissions",
+    "crates/nova-ai-runtime",
+    "crates/nova-audit",
+    "crates/nova-updater",
+]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+authors = ["NOVA OS Contributors"]
+license = "Apache-2.0"
+repository = "https://github.com/nova-os/nova-os"
+homepage = "https://nova-os.dev"
+rust-version = "1.75"
+
+[workspace.dependencies]
+# Async runtime
+tokio = { version = "1.36", features = ["full"] }
+
+# Serialization
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+# D-Bus
+zbus = { version = "4.0", default-features = false, features = ["tokio"] }
+
+# Error handling
+anyhow = "1.0"
+thiserror = "1.0"
+
+# Logging
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
+
+# HTTP client (for AI providers)
+reqwest = { version = "0.11", features = ["json", "rustls-tls"], default-features = false }
+
+# Crypto / security
+sha2 = "0.10"
+hex = "0.4"
+
+# System information
+sysinfo = "0.30"
+
+# Configuration
+toml = "0.8"
+dirs = "5.0"
+
+# Time
+chrono = { version = "0.4", features = ["serde"] }
+
+# UUID
+uuid = { version = "1.6", features = ["v4", "serde"] }
+
+[profile.release]
+lto = "thin"
+codegen-units = 1
+strip = "symbols"
+panic = "abort"
+
+[profile.dev]
+debug = true
+overflow-checks = true

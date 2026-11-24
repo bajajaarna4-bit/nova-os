@@ -1,0 +1,31 @@
+policy_module(nova, 0.1.0)
+
+# NOVA OS SELinux Type Enforcement Policy
+
+require {
+    type unconfined_t;
+    type systemd_system_t;
+    type session_bus_t;
+    class dbus send_msg;
+    class file { read write open getattr lock };
+    class dir { search read open getattr };
+}
+
+type nova_core_t;
+type nova_core_exec_t;
+init_daemon_domain(nova_core_t, nova_core_exec_t)
+
+type nova_permissions_t;
+type nova_permissions_exec_t;
+init_daemon_domain(nova_permissions_t, nova_permissions_exec_t)
+
+type nova_var_lib_t;
+files_type(nova_var_lib_t)
+
+# Allow core and permissions services to read/write state in /var/lib/nova
+allow nova_permissions_t nova_var_lib_t:dir { search read write open getattr add_name remove_name };
+allow nova_permissions_t nova_var_lib_t:file { read write create open getattr lock unlink };
+
+# D-Bus IPC rules
+allow nova_core_t session_bus_t:dbus send_msg;
+allow nova_permissions_t session_bus_t:dbus send_msg;

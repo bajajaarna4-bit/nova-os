@@ -1,0 +1,59 @@
+[Unit]
+Description=NOVA OS Permissions Service
+Documentation=https://github.com/nova-os/nova-os/blob/main/docs/SECURITY.md
+# nova-permissions depends on nova-core (registers under the core D-Bus)
+After=dbus.service nova-core.service
+Requires=dbus.service
+# Wait for nova-core to be fully up before we start
+After=nova-core.service
+
+[Service]
+Type=dbus
+BusName=org.nova.Permissions
+ExecStart=/usr/bin/nova-permissions
+User=nova-system
+Group=nova-system
+
+# --- Security hardening (strict — same level as nova-core) ---
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=read-only
+PrivateTmp=true
+PrivateDevices=true
+# Only Unix sockets needed; no IP networking for permissions service
+RestrictAddressFamilies=AF_UNIX
+SystemCallFilter=@system-service
+AmbientCapabilities=
+CapabilityBoundingSet=
+ProtectClock=true
+ProtectControlGroups=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectKernelLogs=true
+# Writable paths: permission database and runtime state
+ReadWritePaths=/var/lib/nova/permissions /run/nova
+InaccessiblePaths=/proc/kcore /proc/sysrq-trigger /sys/firmware
+
+# Allow polkit to call back to us (via D-Bus); polkitd runs as root so
+# we need to be able to respond to auth_self/auth_admin requests
+# The service does NOT itself escalate; it defers to polkitd.
+
+# --- Restart policy ---
+Restart=on-failure
+RestartSec=5
+StartLimitIntervalSec=60
+StartLimitBurst=3
+
+# --- Resource limits ---
+LimitNOFILE=4096
+LimitCORE=0
+MemoryHigh=64M
+MemoryMax=128M
+
+# --- Logging ---
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=nova-permissions
+
+[Install]
+WantedBy=multi-user.target

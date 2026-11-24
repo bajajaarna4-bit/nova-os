@@ -1,0 +1,25 @@
+[package]
+name = "nova-permissions"
+version = "0.1.0"
+edition = "2021"
+
+[[bin]]
+name = "nova-permissions"
+path = "src/main.rs"
+
+[lib]
+name = "nova_permissions"
+path = "src/lib.rs"
+
+[dependencies]
+tokio = { version = "1", features = ["full"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+zbus = "4"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+anyhow = "1"
+thiserror = "1"
+chrono = { version = "0.4", features = ["serde"] }
+nova-system-api = { path = "../nova-system-api" }
+nova-audit = { path = "../nova-audit" }

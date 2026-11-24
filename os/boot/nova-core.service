@@ -1,0 +1,78 @@
+[Unit]
+Description=NOVA OS Core Service
+Documentation=https://github.com/nova-os/nova-os/blob/main/docs/ARCHITECTURE.md
+# Start after D-Bus daemon is available (we register a well-known bus name)
+After=dbus.service network.target
+# Hard dependency on D-Bus; if dbus dies, nova-core should stop too
+Requires=dbus.service
+# Soft dependency on audit daemon; preferred but not required for startup
+Wants=auditd.service
+
+[Service]
+Type=dbus
+BusName=org.nova.Core
+ExecStart=/usr/bin/nova-core
+# Run as the dedicated nova-system low-privilege account
+User=nova-system
+Group=nova-system
+
+# --- Security hardening ---
+# Prevent the service from gaining new privileges through setuid/capabilities
+NoNewPrivileges=true
+# Mount /usr, /boot, /etc as read-only; /var, /run, /tmp remain writable
+ProtectSystem=strict
+# Allow read-only access to home dirs (for reading user preferences)
+ProtectHome=read-only
+# Give the service its own private /tmp namespace
+PrivateTmp=true
+# Prevent access to raw device nodes (/dev/sda, etc.)
+PrivateDevices=true
+# Restrict to only the address families this service legitimately needs:
+# AF_UNIX: D-Bus (local socket); AF_INET/AF_INET6: health check HTTP endpoint
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+# Allow only syscalls in the @system-service predefined set (read, write, etc.)
+# This blocks dangerous calls like ptrace, perf_event_open, etc.
+SystemCallFilter=@system-service
+# Drop all ambient and bounding capabilities; nova-core needs no root privs
+AmbientCapabilities=
+CapabilityBoundingSet=
+# Prevent the service from modifying the kernel clock
+ProtectClock=true
+# Prevent the service from altering control groups
+ProtectControlGroups=true
+# Restrict to / namespace only (no pivot_root)
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectKernelLogs=true
+# Isolate the network namespace (optional; remove if D-Bus over TCP is needed)
+# PrivateNetwork=true
+# Restrict writable paths to only what nova-core actually needs
+ReadWritePaths=/var/lib/nova /var/log/nova /run/nova
+# Mask paths that could leak sensitive information
+InaccessiblePaths=/proc/kcore /proc/sysrq-trigger /sys/firmware
+
+# --- Restart policy ---
+# Restart on any failure; wait 5s to prevent tight restart loops
+Restart=on-failure
+RestartSec=5
+# After 3 failures within 1 minute, give up and don't restart
+StartLimitIntervalSec=60
+StartLimitBurst=3
+
+# --- Resource limits ---
+# Soft limit on number of open file descriptors
+LimitNOFILE=65536
+# Prevent the process from creating core dumps (security: no memory dumps)
+LimitCORE=0
+# Memory soft limit for the cgroup (adjust based on profiling)
+MemoryHigh=256M
+MemoryMax=512M
+
+# --- Logging ---
+# Route stdout/stderr to the journal with explicit identifier
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=nova-core
+
+[Install]
+WantedBy=multi-user.target

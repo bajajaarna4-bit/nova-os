@@ -1,0 +1,76 @@
+[Unit]
+Description=NOVA OS AI Runtime Service
+Documentation=https://github.com/nova-os/nova-os/blob/main/docs/ARCHITECTURE.md
+# AI runtime requires network (to reach on-device model server or optional cloud)
+# and D-Bus for communicating with nova-core
+After=dbus.service network-online.target nova-core.service
+Requires=dbus.service
+# network-online ensures we have a usable network before starting inference
+Wants=network-online.target
+
+[Service]
+Type=dbus
+BusName=org.nova.AIRuntime
+ExecStart=/usr/bin/nova-ai-runtime
+# Run as dedicated nova-ai account (isolated from nova-system services)
+User=nova-ai
+Group=nova-ai
+
+# --- Security hardening ---
+# No new privileges; nova-ai-runtime is entirely unprivileged
+NoNewPrivileges=true
+# Relaxed to 'full' because the AI model files may live in /usr/share or /var
+ProtectSystem=full
+# No access to home directories (AI models are in /var/lib/nova/models)
+ProtectHome=true
+PrivateTmp=true
+# Needs GPU device access (/dev/dri) for hardware-accelerated inference
+# so PrivateDevices cannot be enabled globally; allow dri specifically
+PrivateDevices=false
+DeviceAllow=/dev/dri rw
+# Allow IP networking (inference can use local HTTP model server or cloud API)
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+# Allow system-service calls plus mmap (needed for loading large model weights)
+SystemCallFilter=@system-service mmap mmap2
+AmbientCapabilities=
+CapabilityBoundingSet=
+ProtectClock=true
+ProtectControlGroups=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectKernelLogs=true
+# AI runtime needs to read model files and write inference cache
+ReadWritePaths=/var/lib/nova/models /var/cache/nova/ai /run/nova
+# Strictly no access to sensitive kernel interfaces
+InaccessiblePaths=/proc/kcore /proc/sysrq-trigger /sys/firmware
+
+# --- Environment ---
+# Point to local model directory; can be overridden via unit drop-in
+Environment=NOVA_AI_MODEL_DIR=/var/lib/nova/models
+Environment=NOVA_AI_INFERENCE_BACKEND=local
+# Optionally set to a cloud API endpoint when local inference is unavailable
+# Environment=NOVA_AI_CLOUD_ENDPOINT=
+
+# --- Restart policy ---
+# AI runtime may crash under OOM; restart with a longer backoff
+Restart=on-failure
+RestartSec=10
+StartLimitIntervalSec=120
+StartLimitBurst=3
+
+# --- Resource limits ---
+# AI inference can be memory-hungry; tune based on target hardware
+LimitNOFILE=65536
+LimitCORE=0
+MemoryHigh=2G
+MemoryMax=4G
+# Limit CPU to prevent AI inference from starving other services
+CPUQuota=200%
+
+# --- Logging ---
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=nova-ai-runtime
+
+[Install]
+WantedBy=graphical.target

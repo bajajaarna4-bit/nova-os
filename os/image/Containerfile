@@ -1,0 +1,348 @@
+# =============================================================================
+# NOVA OS Container Image
+# Base: Fedora Atomic (fedora-bootc) — immutable, OSTree-managed OS image
+# Build: Multi-stage — builder compiles Rust crates, final stage installs
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# Stage 1: Builder — compiles all Rust crates from source
+# -----------------------------------------------------------------------------
+FROM docker.io/library/rust:1.78-slim-bookworm AS builder
+
+# Install C build dependencies needed by some Rust crates (e.g., zbus, ring)
+RUN apt-get update && apt-get install -y \
+    pkg-config \
+    libdbus-1-dev \
+    libssl-dev \
+    clang \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /build
+
+# Copy workspace manifest first to cache dependency downloads
+COPY Cargo.toml Cargo.lock ./
+
+# Copy all crate source trees
+COPY crates/ ./crates/
+
+# Build all crates in release mode with stripped binaries
+# --locked ensures reproducible builds using the exact Cargo.lock versions
+RUN cargo build --release --locked --workspace
+
+# Strip debug symbols to reduce binary size
+RUN strip target/release/nova-core \
+           target/release/nova-permissions \
+           target/release/nova-ai-runtime \
+           target/release/nova-security \
+           target/release/nova-updater
+
+# -----------------------------------------------------------------------------
+# Stage 2: Final — Fedora Atomic bootable OS image
+# Base image is fedora-bootc, an OCI-native bootable container image that
+# supports rpm-ostree layering, SELinux, and atomic updates via bootc.
+# -----------------------------------------------------------------------------
+FROM quay.io/fedora/fedora-bootc:41
+
+# --- Metadata labels ---
+LABEL org.opencontainers.image.title="NOVA OS"
+LABEL org.opencontainers.image.description="NOVA OS — Privacy-first, AI-enhanced immutable Linux desktop"
+LABEL org.opencontainers.image.version="0.1.0"
+LABEL org.opencontainers.image.vendor="NOVA OS Project"
+LABEL org.opencontainers.image.licenses="Apache-2.0"
+LABEL org.opencontainers.image.source="https://github.com/nova-os/nova-os"
+
+# =============================================================================
+# System package installation via dnf
+# All packages are pinned to Fedora 41 repositories for reproducibility.
+# =============================================================================
+
+# --- Wayland display protocol libraries ---
+# wayland-protocols: Standard Wayland extension protocols (xdg-shell, etc.)
+RUN dnf install -y wayland-protocols wayland-devel && dnf clean all
+
+# --- Audio/Video pipeline: PipeWire stack ---
+# pipewire: Modern audio/video router replacing PulseAudio and JACK
+# wireplumber: Session/policy manager for PipeWire (Lua scripting support)
+RUN dnf install -y pipewire wireplumber pipewire-pulseaudio pipewire-alsa && dnf clean all
+
+# --- Authorization framework ---
+# polkit: Defines and brokers privilege authorization for unprivileged processes
+RUN dnf install -y polkit && dnf clean all
+
+# --- Application sandboxing ---
+# flatpak: Container-based app distribution with per-app sandbox permissions
+RUN dnf install -y flatpak xdg-desktop-portal && dnf clean all
+
+# --- Network firewall ---
+# nftables: Modern Linux packet filtering, replacing iptables
+RUN dnf install -y nftables && dnf clean all
+
+# --- Security auditing ---
+# audit: Linux Audit Framework daemon for system call and file access logging
+# aide: Advanced Intrusion Detection Environment — file integrity monitoring
+RUN dnf install -y audit aide && dnf clean all
+
+# --- Mandatory Access Control ---
+# selinux-policy-targeted: Fedora targeted SELinux policy
+# checkpolicy + policycoreutils: Tools for compiling/loading custom .te modules
+RUN dnf install -y \
+    selinux-policy \
+    selinux-policy-targeted \
+    checkpolicy \
+    policycoreutils \
+    policycoreutils-python-utils \
+    setools-console \
+    && dnf clean all
+
+# --- D-Bus system message bus ---
+# Required by nova-core (Type=dbus) and all nova services
+RUN dnf install -y dbus-daemon dbus-common && dnf clean all
+
+# --- Bootloader and secure boot support ---
+# grub2-efi + shim-* for UEFI Secure Boot; grub2-pc for legacy BIOS boot
+RUN dnf install -y \
+    grub2-efi-x64 \
+    grub2-pc \
+    shim-x64 \
+    mokutil \
+    && dnf clean all
+
+# --- rpm-ostree layering for additional packages ---
+# These are installed as overlay packages on top of the base image.
+# They persist across updates unless explicitly removed.
+RUN rpm-ostree install \
+    xdg-user-dirs \
+    xdg-utils \
+    bash-completion \
+    curl \
+    wget \
+    git \
+    htop \
+    neofetch \
+    && ostree container commit
+
+# =============================================================================
+# SELinux configuration — set to enforcing mode
+# The /etc/selinux/config file controls the boot-time SELinux mode.
+# =============================================================================
+
+# Configure SELinux to enforcing mode with targeted policy
+RUN sed -i 's/^SELINUX=.*/SELINUX=enforcing/' /etc/selinux/config && \
+    sed -i 's/^SELINUXTYPE=.*/SELINUXTYPE=targeted/' /etc/selinux/config
+
+# =============================================================================
+# Nova OS custom SELinux policy module
+# Compile and install the nova-selinux.te type enforcement module
+# =============================================================================
+COPY os/policies/nova-selinux.te /tmp/nova-selinux.te
+
+# Compile .te -> .mod -> .pp (policy package) and load it into the store
+RUN cd /tmp && \
+    checkmodule -M -m -o nova-selinux.mod nova-selinux.te && \
+    semodule_package -o nova-selinux.pp -m nova-selinux.mod && \
+    semodule -i nova-selinux.pp && \
+    rm -f nova-selinux.te nova-selinux.mod nova-selinux.pp
+
+# =============================================================================
+# Nova OS system user and group setup
+# nova-system: low-privilege system account for nova-core, nova-permissions
+# nova-ai:     isolated account for AI runtime (no login shell)
+# nova:        default user group for desktop users managed by home-manager
+# =============================================================================
+
+# Create nova-system system account (UID/GID auto-assigned in system range)
+RUN groupadd --system nova-system && \
+    useradd --system --no-create-home --shell /sbin/nologin \
+            --gid nova-system nova-system
+
+# Create nova-ai account for AI runtime isolation
+RUN groupadd --system nova-ai && \
+    useradd --system --no-create-home --shell /sbin/nologin \
+            --gid nova-ai nova-ai
+
+# Create nova group for regular desktop users
+# Users added to this group get access to nova D-Bus interfaces
+RUN groupadd nova
+
+# =============================================================================
+# Install compiled Nova OS binaries (from builder stage)
+# =============================================================================
+
+# Copy release binaries from the builder stage
+COPY --from=builder /build/target/release/nova-core         /usr/bin/nova-core
+COPY --from=builder /build/target/release/nova-permissions   /usr/bin/nova-permissions
+COPY --from=builder /build/target/release/nova-ai-runtime    /usr/bin/nova-ai-runtime
+COPY --from=builder /build/target/release/nova-security      /usr/bin/nova-security
+COPY --from=builder /build/target/release/nova-updater       /usr/bin/nova-updater
+
+# Set proper ownership and permissions on binaries
+# Binaries are owned by root but executable by all; services use User= in units
+RUN chmod 755 /usr/bin/nova-core \
+              /usr/bin/nova-permissions \
+              /usr/bin/nova-ai-runtime \
+              /usr/bin/nova-security \
+              /usr/bin/nova-updater && \
+    chown root:root /usr/bin/nova-core \
+                    /usr/bin/nova-permissions \
+                    /usr/bin/nova-ai-runtime \
+                    /usr/bin/nova-security \
+                    /usr/bin/nova-updater
+
+# =============================================================================
+# Install systemd service units
+# Units are placed in /usr/lib/systemd/system/ (vendor location, not /etc)
+# so they are managed by the OS image and not user-overridable by default.
+# =============================================================================
+
+COPY os/boot/nova-core.service           /usr/lib/systemd/system/nova-core.service
+COPY os/boot/nova-permissions.service    /usr/lib/systemd/system/nova-permissions.service
+COPY os/boot/nova-ai-runtime.service     /usr/lib/systemd/system/nova-ai-runtime.service
+COPY os/boot/nova-security.service       /usr/lib/systemd/system/nova-security.service
+COPY os/boot/nova-updater.service        /usr/lib/systemd/system/nova-updater.service
+
+# Enable nova services so they start on boot
+# systemctl enable creates the WantedBy symlinks in the appropriate target dir
+RUN systemctl enable nova-core.service \
+                     nova-permissions.service \
+                     nova-ai-runtime.service \
+                     nova-security.service \
+                     nova-updater.service
+
+# =============================================================================
+# Install polkit policy file
+# Policy files go in /usr/share/polkit-1/actions/ per polkit spec
+# =============================================================================
+
+COPY os/policies/nova.policy /usr/share/polkit-1/actions/org.nova.policy
+
+# Set correct ownership (polkit reads these as root)
+RUN chown root:root /usr/share/polkit-1/actions/org.nova.policy && \
+    chmod 644 /usr/share/polkit-1/actions/org.nova.policy
+
+# =============================================================================
+# Home-manager configuration for nova user group
+# Provides declarative dotfile management for desktop users
+# =============================================================================
+
+# Create home-manager config directory skeleton
+RUN mkdir -p /etc/nova/home-manager && \
+    cat > /etc/nova/home-manager/default.nix <<'EOF'
+# NOVA OS default home-manager configuration
+# Applied to all users in the nova group at first login
+{ config, pkgs, ... }:
+{
+  programs.bash.enable = true;
+  programs.git.enable = true;
+  xdg.enable = true;
+  xdg.userDirs.enable = true;
+  home.stateVersion = "24.05";
+}
+EOF
+
+# =============================================================================
+# System default runlevel: graphical.target
+# This ensures the display manager and graphical session start on boot.
+# =============================================================================
+
+RUN systemctl set-default graphical.target
+
+# =============================================================================
+# nftables firewall default configuration
+# Default policy: drop all inbound, allow established, allow loopback
+# =============================================================================
+
+COPY <<'EOF' /etc/nftables.conf
+#!/usr/sbin/nft -f
+# NOVA OS default nftables configuration
+# Policy: stateful firewall, deny inbound by default
+
+flush ruleset
+
+table inet nova_filter {
+    chain input {
+        type filter hook input priority filter; policy drop;
+
+        # Allow loopback traffic
+        iif "lo" accept
+
+        # Allow established and related connections
+        ct state { established, related } accept
+
+        # Allow ICMPv4 and ICMPv6 (ping, NDP, etc.)
+        ip protocol icmp accept
+        ip6 nexthdr ipv6-icmp accept
+
+        # Drop everything else
+        log prefix "nova-firewall-drop: " flags all counter drop
+    }
+
+    chain forward {
+        type filter hook forward priority filter; policy drop;
+    }
+
+    chain output {
+        type filter hook output priority filter; policy accept;
+    }
+}
+EOF
+
+# Enable nftables on boot
+RUN systemctl enable nftables.service
+
+# =============================================================================
+# Audit daemon configuration
+# Log all privilege escalation and file access to /var/log/audit/
+# =============================================================================
+
+COPY <<'EOF' /etc/audit/rules.d/nova.rules
+# NOVA OS audit rules
+# Record privilege escalation attempts
+-a always,exit -F arch=b64 -S setuid -S setgid -F auid!=unset -k privilege_escalation
+
+# Record writes to sensitive directories
+-w /etc/shadow -p wa -k identity
+-w /etc/passwd -p wa -k identity
+-w /etc/sudoers -p wa -k sudoers
+-w /usr/bin/nova-core -p x -k nova_exec
+-w /usr/bin/nova-updater -p x -k nova_exec
+
+# Record mount/unmount operations
+-a always,exit -F arch=b64 -S mount -S umount2 -k mount_ops
+
+# Record kernel module loading
+-a always,exit -F arch=b64 -S init_module -S finit_module -k modules
+EOF
+
+# =============================================================================
+# AIDE (file integrity) initial configuration
+# =============================================================================
+
+COPY <<'EOF' /etc/aide.conf
+# NOVA OS AIDE configuration
+# Monitor critical system binaries and config files
+database=file:/var/lib/aide/aide.db
+database_out=file:/var/lib/aide/aide.db.new
+gzip_dbout=yes
+
+# Nova OS binaries — monitor for changes in content, permissions, ownership
+/usr/bin/nova-core          CONTENT_EX+p+u+g
+/usr/bin/nova-permissions   CONTENT_EX+p+u+g
+/usr/bin/nova-ai-runtime    CONTENT_EX+p+u+g
+/usr/bin/nova-security      CONTENT_EX+p+u+g
+/usr/bin/nova-updater       CONTENT_EX+p+u+g
+
+# System configuration
+/etc/selinux                CONTENT_EX+p+u+g
+/etc/polkit-1               CONTENT_EX+p+u+g
+/usr/lib/systemd/system     CONTENT_EX+p+u+g
+EOF
+
+# Enable auditd on boot
+RUN systemctl enable auditd.service
+
+# =============================================================================
+# Final: commit OSTree content layer
+# =============================================================================
+
+# Ensure /var and /etc overlays are clean for first boot
+RUN ostree container commit

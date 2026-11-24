@@ -1,0 +1,63 @@
+[Unit]
+Description=NOVA OS Security Service
+Documentation=https://github.com/nova-os/nova-os/blob/main/docs/SECURITY.md
+# Security service starts early; needs audit daemon up first
+After=dbus.service auditd.service nova-core.service
+Requires=dbus.service
+Wants=auditd.service
+
+[Service]
+Type=dbus
+BusName=org.nova.Security
+ExecStart=/usr/bin/nova-security
+User=nova-system
+Group=nova-system
+
+# --- Security hardening ---
+NoNewPrivileges=true
+# 'strict' but with explicit exceptions for /proc and /sys (read-only)
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+# Needs /dev/audit socket to query audit subsystem
+PrivateDevices=false
+DeviceAllow=/dev/audit r
+# Allow only Unix and local socket communication (no IP needed)
+RestrictAddressFamilies=AF_UNIX AF_NETLINK
+# Needs @system-service plus the ability to read proc and sys
+SystemCallFilter=@system-service
+AmbientCapabilities=
+# CAP_AUDIT_READ allows reading the kernel audit log ring buffer
+CapabilityBoundingSet=CAP_AUDIT_READ
+AmbientCapabilities=CAP_AUDIT_READ
+ProtectClock=true
+ProtectControlGroups=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectKernelLogs=false
+# Allow read access to /proc (process enumeration) and /sys (kernel state)
+# These are mounted read-only from the service's perspective via BindReadOnlyPaths
+BindReadOnlyPaths=/proc /sys
+ReadWritePaths=/var/lib/nova/security /var/log/nova /run/nova
+InaccessiblePaths=/proc/kcore /proc/sysrq-trigger /sys/firmware
+
+# --- Restart policy ---
+# Security service must stay running; restart quickly
+Restart=always
+RestartSec=3
+StartLimitIntervalSec=60
+StartLimitBurst=5
+
+# --- Resource limits ---
+LimitNOFILE=16384
+LimitCORE=0
+MemoryHigh=128M
+MemoryMax=256M
+
+# --- Logging ---
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=nova-security
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,23 @@
+[
+  {
+    "app_id": "org.nova.terminal",
+    "permission": "files",
+    "granted": true,
+    "granted_at": "2026-11-24T12:00:00Z",
+    "granted_by": "user"
+  },
+  {
+    "app_id": "org.nova.assistant",
+    "permission": "network",
+    "granted": true,
+    "granted_at": "2026-11-24T12:05:00Z",
+    "granted_by": "user"
+  },
+  {
+    "app_id": "org.nova.settings",
+    "permission": "system",
+    "granted": true,
+    "granted_at": "2026-11-24T12:10:00Z",
+    "granted_by": "system"
+  }
+]

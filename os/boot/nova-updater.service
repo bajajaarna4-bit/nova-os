@@ -1,0 +1,77 @@
+[Unit]
+Description=NOVA OS Update Service
+Documentation=https://github.com/nova-os/nova-os/blob/main/docs/BUILD.md
+# Updater needs network and D-Bus; it defers to polkit for privilege elevation
+After=dbus.service network-online.target
+Requires=dbus.service
+Wants=network-online.target
+# Do not start if system is running in emergency/rescue mode
+ConditionPathExists=!/etc/nova/updates-disabled
+
+[Service]
+Type=dbus
+BusName=org.nova.Updater
+ExecStart=/usr/bin/nova-updater
+# Run as nova-system by default; privilege escalation goes through polkit
+# The updater calls rpm-ostree via D-Bus (rpm-ostreed runs as root)
+# so nova-updater itself does NOT need to run as root.
+User=nova-system
+Group=nova-system
+
+# --- Security hardening ---
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+# No raw device access needed
+PrivateDevices=true
+# Needs IP networking to reach update servers
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+# Allow system-service calls; rpm-ostree D-Bus client needs no extra syscalls
+SystemCallFilter=@system-service
+AmbientCapabilities=
+# No capabilities; privilege is obtained via polkit/D-Bus to rpm-ostreed
+CapabilityBoundingSet=
+ProtectClock=true
+ProtectControlGroups=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectKernelLogs=true
+# Writable: update download cache and state file
+ReadWritePaths=/var/cache/nova/updates /var/lib/nova/updates /run/nova
+InaccessiblePaths=/proc/kcore /proc/sysrq-trigger /sys/firmware
+
+# --- Polkit interaction ---
+# The nova-updater calls polkit action org.nova.updater.apply-update
+# (defined in os/policies/nova.policy) before invoking rpm-ostreed.
+# This ensures the user authenticates as admin before updates are applied.
+
+# --- Timer-based activation ---
+# This service is typically socket/timer activated; see nova-updater.timer
+# To enable the timer:
+#   systemctl enable nova-updater.timer
+
+# --- Environment ---
+Environment=NOVA_UPDATE_CHECK_URL=https://updates.nova-os.org/v1/check
+Environment=NOVA_UPDATE_VERIFY_SIGNATURE=true
+Environment=NOVA_UPDATE_SIGNATURE_KEY=/etc/nova/update-signing-key.pub
+
+# --- Restart policy ---
+Restart=on-failure
+RestartSec=30
+StartLimitIntervalSec=300
+StartLimitBurst=3
+
+# --- Resource limits ---
+LimitNOFILE=16384
+LimitCORE=0
+MemoryHigh=256M
+MemoryMax=512M
+
+# --- Logging ---
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=nova-updater
+
+[Install]
+WantedBy=multi-user.target

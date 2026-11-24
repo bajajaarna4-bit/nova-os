@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NOVA OS — Zero-Trust, AI-Native Operating System</title>
+  <meta name="description" content="NOVA OS combines atomic Linux deployments, zero-trust security architecture, local-first AI intelligence, and a fluid desktop environment." />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <!-- Header / Nav -->
+  <header style="display:flex;justify-content:space-between;align-items:center;padding:24px 48px;max-width:1200px;margin:0 auto;">
+    <div style="display:flex;align-items:center;gap:12px;font-weight:700;font-size:20px;letter-spacing:-0.5px;">
+      <div style="width:32px;height:32px;border-radius:8px;background:var(--gradient-hero);display:flex;align-items:center;justify-content:center;color:#fff;font-size:16px;">✦</div>
+      <span>NOVA OS</span>
+    </div>
+    <nav style="display:flex;gap:24px;align-items:center;font-size:14px;color:var(--text-secondary);">
+      <a href="#features" style="color:inherit;text-decoration:none;">Features</a>
+      <a href="#architecture" style="color:inherit;text-decoration:none;">Architecture</a>
+      <a href="#security" style="color:inherit;text-decoration:none;">Zero-Trust</a>
+      <a href="#demo" style="color:inherit;text-decoration:none;">Interactive Demo</a>
+      <a href="https://github.com/nova-os/nova-os" style="color:var(--text-primary);text-decoration:none;font-weight:600;padding:8px 16px;border-radius:var(--radius-sm);background:rgba(255,255,255,0.06);border:1px solid var(--border);">GitHub</a>
+    </nav>
+  </header>
+
+  <!-- Hero Section -->
+  <section style="text-align:center;padding:96px 24px 64px;max-width:900px;margin:0 auto;">
+    <div style="display:inline-block;padding:6px 16px;border-radius:var(--radius-full);background:rgba(139,92,246,0.12);border:1px solid var(--border-bright);color:var(--violet-400);font-size:12px;font-weight:600;margin-bottom:24px;">
+      Development Preview v0.1.0-alpha
+    </div>
+    <h1 style="font-size:56px;font-weight:800;letter-spacing:-1.5px;line-height:1.1;margin-bottom:24px;">
+      The Zero-Trust, <br />
+      <span style="background:var(--gradient-text);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">AI-Native Operating System</span>
+    </h1>
+    <p style="font-size:18px;color:var(--text-secondary);line-height:1.6;margin-bottom:40px;max-width:680px;margin-left:auto;margin-right:auto;">
+      Built on an atomic Linux base with a custom Rust system foundation, SELinux enforcement, and local-first AI intelligence. Designed for developer freedom and privacy.
+    </p>
+    <div style="display:flex;gap:16px;justify-content:center;align-items:center;">
+      <a href="nova-os-demo.html" style="padding:14px 28px;background:var(--gradient-hero);color:#fff;text-decoration:none;border-radius:var(--radius-sm);font-weight:600;font-size:15px;box-shadow:0 8px 24px rgba(139,92,246,0.3);">
+        Try Interactive Web Demo →
+      </a>
+      <a href="https://github.com/nova-os/nova-os" style="padding:14px 28px;background:rgba(255,255,255,0.05);color:var(--text-primary);text-decoration:none;border-radius:var(--radius-sm);font-weight:600;font-size:15px;border:1px solid var(--border);">
+        View Documentation
+      </a>
+    </div>
+  </section>
+
+  <!-- Key Pillars Section -->
+  <section id="features" style="max-width:1100px;margin:64px auto;padding:0 24px;">
+    <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(300px, 1fr));gap:24px;">
+      <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-md);padding:32px;">
+        <div style="font-size:32px;margin-bottom:16px;">🛡️</div>
+        <h3 style="font-size:18px;font-weight:600;margin-bottom:8px;">Zero-Trust Architecture</h3>
+        <p style="font-size:14px;color:var(--text-secondary);line-height:1.5;">
+          Enforcing SELinux policies by default, isolated systemd sandboxes, and polkit privilege elevation. Every privileged request is audited and authorized.
+        </p>
+      </div>
+
+      <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-md);padding:32px;">
+        <div style="font-size:32px;margin-bottom:16px;">✨</div>
+        <h3 style="font-size:18px;font-weight:600;margin-bottom:8px;">Local-First Intelligence</h3>
+        <p style="font-size:14px;color:var(--text-secondary);line-height:1.5;">
+          Private system assistant running local Ollama inference or optional Gemini connections. Strict allowlisted tools prevent arbitrary command execution.
+        </p>
+      </div>
+
+      <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-md);padding:32px;">
+        <div style="font-size:32px;margin-bottom:16px;">🔄</div>
+        <h3 style="font-size:18px;font-weight:600;margin-bottom:8px;">Atomic Deployments</h3>
+        <p style="font-size:14px;color:var(--text-secondary);line-height:1.5;">
+          Immutable root file system managed by bootc and rpm-ostree. Updates are signed, atomic, and automatically roll back if a boot integrity check fails.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Architecture Overview -->
+  <section id="architecture" style="max-width:1100px;margin:80px auto;padding:0 24px;">
+    <h2 style="font-size:32px;font-weight:700;text-align:center;margin-bottom:16px;">Subsystem Architecture</h2>
+    <p style="text-align:center;color:var(--text-secondary);margin-bottom:48px;">
+      Strict interface isolation between Rust system daemons, D-Bus session bus, and the desktop shell.
+    </p>
+
+    <div style="background:var(--bg-secondary);border:1px solid var(--border);border-radius:var(--radius-lg);padding:40px;display:flex;flex-direction:column;gap:16px;">
+      <div style="padding:16px 20px;background:rgba(139,92,246,0.15);border:1px solid var(--border-bright);border-radius:var(--radius-sm);display:flex;justify-content:space-between;align-items:center;">
+        <div><strong>NOVA Desktop Shell</strong> — Wayland Compositor / Web Preview</div>
+        <span style="font-size:12px;color:var(--violet-400);">TypeScript + Web Components</span>
+      </div>
+      <div style="text-align:center;color:var(--text-muted);font-size:18px;">↕ D-Bus Session Bus (org.nova.*)</div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(200px, 1fr));gap:12px;">
+        <div style="padding:14px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-sm);">
+          <div style="font-size:12px;color:var(--text-muted);">org.nova.Core</div>
+          <strong>Telemetry & Health</strong>
+        </div>
+        <div style="padding:14px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-sm);">
+          <div style="font-size:12px;color:var(--text-muted);">org.nova.Permissions</div>
+          <strong>Device Broker</strong>
+        </div>
+        <div style="padding:14px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-sm);">
+          <div style="font-size:12px;color:var(--text-muted);">org.nova.AIRuntime</div>
+          <strong>Allowlisted Tools</strong>
+        </div>
+        <div style="padding:14px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-sm);">
+          <div style="font-size:12px;color:var(--text-muted);">org.nova.Security</div>
+          <strong>SELinux & Firewall</strong>
+        </div>
+      </div>
+      <div style="text-align:center;color:var(--text-muted);font-size:18px;">↕ Systemd + Polkit Confinement</div>
+      <div style="padding:16px 20px;background:rgba(255,255,255,0.02);border:1px solid var(--border);border-radius:var(--radius-sm);text-align:center;">
+        <strong>Atomic Linux Base:</strong> Fedora bootc Container Image with SELinux Enforcing
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer style="border-top:1px solid var(--border);padding:48px 24px;text-align:center;color:var(--text-secondary);font-size:13px;max-width:1100px;margin:80px auto 0;">
+    <p>© 2026 NOVA OS Contributors. Released under the Apache 2.0 License.</p>
+  </footer>
+</body>
+</html>
