@@ -1,8 +1,11 @@
-// nova-top-bar.ts — Status bar / top panel
+// nova-top-bar.ts — Status bar / top panel with live telemetry and system tray
 import { LitElement, html, css } from 'lit';
 import { customElement, state } from 'lit/decorators.js';
 import './nova-notification-center.js';
 import './nova-quick-settings.js';
+import './nova-workspace-switcher.js';
+import { novaApi, type SystemMetrics } from '../services/nova-api.js';
+import { appState, type NotificationItem } from '../state/app-state.js';
 
 @customElement('nova-top-bar')
 export class NovaTopBar extends LitElement {
@@ -13,12 +16,14 @@ export class NovaTopBar extends LitElement {
       justify-content: space-between;
       padding: 0 16px;
       height: 40px;
-      background: var(--nova-bg-glass);
-      backdrop-filter: blur(24px) saturate(1.4);
-      -webkit-backdrop-filter: blur(24px) saturate(1.4);
-      border-bottom: 1px solid var(--nova-border);
-      font-family: var(--nova-font-ui);
+      background: var(--nova-bg-glass, rgba(15, 16, 33, 0.75));
+      backdrop-filter: blur(28px) saturate(1.4);
+      -webkit-backdrop-filter: blur(28px) saturate(1.4);
+      border-bottom: 1px solid var(--nova-border, rgba(255,255,255,0.08));
+      font-family: var(--nova-font-ui, system-ui, sans-serif);
       user-select: none;
+      box-sizing: border-box;
+      z-index: 100;
     }
 
     .left {
@@ -27,286 +32,236 @@ export class NovaTopBar extends LitElement {
       gap: 12px;
     }
 
-    .logo {
+    .logo-btn {
       display: flex;
       align-items: center;
       gap: 8px;
+      padding: 4px 8px;
+      border-radius: var(--nova-radius-sm, 6px);
       cursor: pointer;
+      transition: background var(--nova-transition-fast);
+      border: none;
+      background: transparent;
+      color: #fff;
+    }
+    .logo-btn:hover {
+      background: rgba(255, 255, 255, 0.08);
     }
 
     .logo-icon {
       width: 22px;
       height: 22px;
-      background: var(--nova-accent-gradient);
+      background: var(--nova-accent-gradient, linear-gradient(135deg, #7c5af0, #3b82f6));
       border-radius: 6px;
       display: flex;
       align-items: center;
       justify-content: center;
       font-size: 12px;
-      font-weight: 700;
+      font-weight: 800;
       color: white;
+      box-shadow: 0 2px 8px rgba(124, 90, 240, 0.4);
     }
 
     .logo-text {
       font-size: 13px;
-      font-weight: 600;
-      background: var(--nova-accent-gradient);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-    }
-
-    .workspace-indicator {
-      display: flex;
-      align-items: center;
-      gap: 4px;
-      font-size: 12px;
-      color: var(--nova-text-secondary);
-      padding: 3px 8px;
-      background: var(--nova-bg-hover);
-      border-radius: var(--nova-radius-sm);
-      border: 1px solid var(--nova-border);
-      cursor: pointer;
-      transition: background var(--nova-transition-fast);
-    }
-    .workspace-indicator:hover {
-      background: rgba(255,255,255,0.08);
+      font-weight: 700;
+      letter-spacing: -0.3px;
     }
 
     .center {
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
       display: flex;
-      flex-direction: column;
       align-items: center;
-      gap: 0;
+      gap: 6px;
+      cursor: pointer;
+      padding: 4px 10px;
+      border-radius: 6px;
+      transition: background var(--nova-transition-fast);
+    }
+    .center:hover {
+      background: rgba(255, 255, 255, 0.06);
     }
 
     .clock {
-      font-size: 14px;
-      font-weight: 500;
-      color: var(--nova-text-primary);
-      line-height: 1;
-    }
-
-    .date {
-      font-size: 10px;
-      color: var(--nova-text-secondary);
-      line-height: 1;
-      margin-top: 2px;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--nova-text-primary, rgba(255,255,255,0.92));
+      letter-spacing: 0.2px;
     }
 
     .right {
       display: flex;
       align-items: center;
-      gap: 4px;
+      gap: 10px;
+    }
+
+    .metrics-pill {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 3px 8px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid var(--nova-border, rgba(255,255,255,0.08));
+      border-radius: 12px;
+      font-size: 11px;
+      color: var(--nova-text-secondary, rgba(255,255,255,0.7));
+    }
+
+    .metric-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #10b981;
+      box-shadow: 0 0 6px #10b981;
     }
 
     .tray-btn {
       display: flex;
       align-items: center;
       justify-content: center;
-      width: 28px;
-      height: 28px;
-      border-radius: var(--nova-radius-sm);
+      padding: 5px 8px;
+      border-radius: 6px;
       cursor: pointer;
-      transition: background var(--nova-transition-fast);
+      background: transparent;
+      border: none;
+      color: var(--nova-text-secondary, rgba(255,255,255,0.7));
+      font-size: 13px;
+      transition: all var(--nova-transition-fast);
       position: relative;
-      color: var(--nova-text-secondary);
     }
     .tray-btn:hover {
-      background: var(--nova-bg-hover);
-      color: var(--nova-text-primary);
-    }
-    .tray-btn svg {
-      width: 16px;
-      height: 16px;
+      background: rgba(255, 255, 255, 0.08);
+      color: #fff;
     }
 
-    .notification-btn {
-      position: relative;
-    }
-
-    .notif-badge {
+    .badge-dot {
       position: absolute;
       top: 4px;
       right: 4px;
-      width: 14px;
-      height: 14px;
-      background: var(--nova-accent-violet);
+      width: 6px;
+      height: 6px;
       border-radius: 50%;
-      font-size: 9px;
-      font-weight: 600;
-      color: white;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .avatar {
-      width: 24px;
-      height: 24px;
-      border-radius: 50%;
-      background: var(--nova-accent-gradient);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 11px;
-      font-weight: 600;
-      color: white;
-      cursor: pointer;
-      margin-left: 4px;
-    }
-
-    .panel-container {
-      position: fixed;
-      top: 44px;
-      z-index: 300;
-    }
-
-    .quick-settings-container {
-      right: 8px;
-    }
-
-    .notification-container {
-      right: 8px;
+      background: #ef4444;
+      box-shadow: 0 0 6px #ef4444;
     }
   `;
 
-  @state() private timeStr = '';
-  @state() private dateStr = '';
-  @state() private showNotifications = false;
-  @state() private showQuickSettings = false;
-  @state() private notifCount = 3;
-  @state() private currentWorkspace = 1;
+  @state() private timeString = '';
+  @state() private notificationsOpen = false;
+  @state() private quickSettingsOpen = false;
+  @state() private notificationCount = 2;
+  @state() private metrics: SystemMetrics | null = null;
 
-  private clockInterval = 0;
+  private timer = 0;
+  private metricsTimer = 0;
+  private unsubNotif?: () => void;
 
   connectedCallback() {
     super.connectedCallback();
     this.updateClock();
-    this.clockInterval = window.setInterval(() => this.updateClock(), 1000);
+    this.timer = window.setInterval(() => this.updateClock(), 1000);
+
+    this.pollMetrics();
+    this.metricsTimer = window.setInterval(() => this.pollMetrics(), 4000);
+
+    this.unsubNotif = appState.subscribe('notifications', (items: NotificationItem[]) => {
+      this.notificationCount = items.length;
+      this.requestUpdate();
+    });
   }
 
   disconnectedCallback() {
     super.disconnectedCallback();
-    clearInterval(this.clockInterval);
+    clearInterval(this.timer);
+    clearInterval(this.metricsTimer);
+    this.unsubNotif?.();
   }
 
   private updateClock() {
     const now = new Date();
-    this.timeStr = now.toLocaleTimeString('en-US', {hour: '2-digit', minute: '2-digit', hour12: true});
-    this.dateStr = now.toLocaleDateString('en-US', {weekday: 'short', month: 'short', day: 'numeric'});
+    this.timeString = now.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' }) +
+      '  ' + now.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit', second: '2-digit' });
   }
 
-  private toggleNotifications() {
-    this.showNotifications = !this.showNotifications;
-    if (this.showNotifications) this.showQuickSettings = false;
+  private async pollMetrics() {
+    this.metrics = await novaApi.getSystemInfo();
+    this.requestUpdate();
   }
 
-  private toggleQuickSettings() {
-    this.showQuickSettings = !this.showQuickSettings;
-    if (this.showQuickSettings) this.showNotifications = false;
-  }
-
-  private handleKeyDown(e: KeyboardEvent) {
-    if (e.key === 'Escape') {
-      this.showNotifications = false;
-      this.showQuickSettings = false;
-    }
+  private toggleLauncher() {
+    this.dispatchEvent(new CustomEvent('launcher-toggle', { bubbles: true, composed: true }));
   }
 
   render() {
     return html`
       <div class="left">
-        <div class="logo" @click=${() => this.dispatchEvent(new CustomEvent('launcher-toggle', {bubbles: true, composed: true}))}>
-          <div class="logo-icon">N</div>
-          <span class="logo-text">NOVA OS</span>
-        </div>
-        <div class="workspace-indicator">
-          <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor">
-            <rect x="0" y="0" width="5" height="5" rx="1"/>
-            <rect x="7" y="0" width="5" height="5" rx="1" opacity="0.4"/>
-            <rect x="0" y="7" width="5" height="5" rx="1" opacity="0.4"/>
-            <rect x="7" y="7" width="5" height="5" rx="1" opacity="0.4"/>
-          </svg>
-          WS ${this.currentWorkspace}
-        </div>
+        <button class="logo-btn" @click=${this.toggleLauncher} title="Application Launcher (Super key)">
+          <div class="logo-icon">✦</div>
+          <span class="logo-text">NOVA</span>
+        </button>
+        <nova-workspace-switcher></nova-workspace-switcher>
       </div>
 
-      <div class="center">
-        <div class="clock">${this.timeStr}</div>
-        <div class="date">${this.dateStr}</div>
+      <div class="center" @click=${() => appState.openApp('settings')} title="System Date & Time">
+        <span class="clock">${this.timeString}</span>
       </div>
 
       <div class="right">
-        <!-- Network -->
-        <div class="tray-btn" title="Network: Connected">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M5 12.55a11 11 0 0 1 14.08 0"/>
-            <path d="M1.42 9a16 16 0 0 1 21.16 0"/>
-            <path d="M8.53 16.11a6 6 0 0 1 6.95 0"/>
-            <circle cx="12" cy="20" r="1" fill="currentColor"/>
-          </svg>
-        </div>
+        ${this.metrics ? html`
+          <div class="metrics-pill" title="Live System Telemetry">
+            <span class="metric-dot"></span>
+            <span>CPU ${this.metrics.cpuPercent}%</span>
+            <span>RAM ${Math.round(this.metrics.memoryUsedBytes / (1024 ** 3))}GB</span>
+          </div>
+        ` : ''}
 
-        <!-- Bluetooth -->
-        <div class="tray-btn" title="Bluetooth: On">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <polyline points="6.5 6.5 17.5 17.5 12 23 12 1 17.5 6.5 6.5 17.5"/>
-          </svg>
-        </div>
+        <button
+          class="tray-btn"
+          @click=${() => {
+            this.notificationsOpen = !this.notificationsOpen;
+            if (this.notificationsOpen) this.quickSettingsOpen = false;
+          }}
+          title="Notifications"
+        >
+          <span>🔔</span>
+          ${this.notificationCount > 0 ? html`<span class="badge-dot"></span>` : ''}
+        </button>
 
-        <!-- Volume -->
-        <div class="tray-btn" title="Volume: 75%">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
-            <path d="M15.54 8.46a5 5 0 0 1 0 7.07"/>
-            <path d="M19.07 4.93a10 10 0 0 1 0 14.14"/>
-          </svg>
-        </div>
+        <button
+          class="tray-btn"
+          @click=${() => {
+            this.quickSettingsOpen = !this.quickSettingsOpen;
+            if (this.quickSettingsOpen) this.notificationsOpen = false;
+          }}
+          title="Quick Settings"
+        >
+          <span>📶</span>
+          <span>⚡</span>
+        </button>
 
-        <!-- Battery -->
-        <div class="tray-btn" title="Battery: 82%">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <rect x="1" y="6" width="18" height="12" rx="2" ry="2"/>
-            <line x1="23" y1="13" x2="23" y2="11"/>
-            <rect x="3" y="8" width="11" height="8" rx="1" fill="currentColor" opacity="0.7"/>
-          </svg>
-        </div>
-
-        <!-- Notifications -->
-        <div class="tray-btn notification-btn" title="Notifications" @click=${this.toggleNotifications}>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
-            <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
-          </svg>
-          ${this.notifCount > 0 ? html`<span class="notif-badge">${this.notifCount}</span>` : ''}
-        </div>
-
-        <!-- Quick Settings -->
-        <div class="tray-btn" title="Quick Settings" @click=${this.toggleQuickSettings}>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <circle cx="12" cy="12" r="3"/>
-            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
-          </svg>
-        </div>
-
-        <div class="avatar" title="User menu">U</div>
+        <button
+          class="tray-btn"
+          @click=${() => appState.openApp('ai-assistant')}
+          title="NOVA Intelligence (Super+A)"
+        >
+          <span>✨</span>
+        </button>
       </div>
 
-      ${this.showNotifications ? html`
-        <div class="panel-container notification-container">
-          <nova-notification-center
-            @close=${() => { this.showNotifications = false; }}
-          ></nova-notification-center>
-        </div>
+      ${this.notificationsOpen ? html`
+        <nova-notification-center
+          .open=${this.notificationsOpen}
+          @close=${() => { this.notificationsOpen = false; }}
+        ></nova-notification-center>
       ` : ''}
 
-      ${this.showQuickSettings ? html`
-        <div class="panel-container quick-settings-container">
-          <nova-quick-settings
-            @close=${() => { this.showQuickSettings = false; }}
-          ></nova-quick-settings>
-        </div>
+      ${this.quickSettingsOpen ? html`
+        <nova-quick-settings
+          .open=${this.quickSettingsOpen}
+          @close=${() => { this.quickSettingsOpen = false; }}
+        ></nova-quick-settings>
       ` : ''}
     `;
   }
