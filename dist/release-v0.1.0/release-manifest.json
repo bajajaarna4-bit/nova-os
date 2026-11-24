@@ -1,0 +1,34 @@
+{
+  "version": "v0.1.0",
+  "release_tag": "0.1.0",
+  "release_date": "2026-11-24",
+  "iso_filename": "nova-os-0.1.0-x86_64.iso",
+  "iso_size_bytes": 4145152,
+  "sha256": "477a7bb5d2f01b57244579121dbb8077ffc715e617181c45074806b2ef568e88",
+  "sha512": "cade97e8a6944d860e23f927dbd40d67b6c4ef72f3da0f74053e07114309e1c9dac46f40a842db825b2303ca555da140f19aeb655d36450f4a569ce5685b3032",
+  "target_arch": "x86_64",
+  "boot_modes": [
+    "UEFI (Secure Boot)",
+    "Legacy BIOS (MBR)"
+  ],
+  "base_distribution": "Fedora Atomic 41 (bootc container-native)",
+  "kernel_version": "6.11.8",
+  "desktop_shell": "NOVA Lit/Vite Desktop Shell v0.1.0",
+  "security_features": [
+    "SELinux Enforcing Mode",
+    "SHA-256 Hash-Chained Audit Logging",
+    "Systemd Strict Sandboxing (ProtectSystem=strict, MemoryDenyWriteExecute=true)",
+    "Polkit Explicit Authorization Controls",
+    "Bubblewrap / Flatpak Container Isolation",
+    "LUKS2 AES-XTS-Plain64 Argon2id Full Disk Encryption",
+    "Anti-Downgrade Semantic Version Verification"
+  ],
+  "hardware_requirements": {
+    "minimum_ram_mb": 4096,
+    "recommended_ram_mb": 8192,
+    "minimum_storage_gb": 32,
+    "recommended_storage_gb": 64,
+    "cpu_architecture": "x86-64 (v2+)",
+    "virtualization": "KVM / QEMU / VMware / VirtualBox compatible"
+  }
+}

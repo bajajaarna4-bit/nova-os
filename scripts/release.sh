@@ -119,6 +119,10 @@ cp "${REPO_ROOT}/CHANGELOG.md"   "${ARTIFACTS_DIR}/" 2>/dev/null || true
 cp "${REPO_ROOT}/SECURITY.md"    "${ARTIFACTS_DIR}/" 2>/dev/null || true
 cp "${REPO_ROOT}/LICENSE"        "${ARTIFACTS_DIR}/" 2>/dev/null || true
 
+# ── Build bootable ISO ──────────────────────────────────────────────────────
+info "Building bootable ISO 9660 image..."
+python3 "${REPO_ROOT}/scripts/build_iso.py" || warn "ISO build script failed or pycdlib not present"
+
 # ── Generate checksums ───────────────────────────────────────────────────────
 info "Generating checksums..."
 

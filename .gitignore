@@ -5,7 +5,10 @@ Cargo.lock
 
 # Node / Web
 node_modules/
-dist/
+desktop/shell/dist/
+dist/*
+!dist/release-*/
+dist/release-*/*.iso
 .vite/
 npm-debug.log*
 pnpm-debug.log*

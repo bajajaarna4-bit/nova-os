@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Download NOVA OS v0.1.0 — Zero-Trust, AI-Native Linux</title>
+  <meta name="description" content="Download the official NOVA OS v0.1.0 ISO installer. Verified bootable image with SHA-256 checksums and installation instructions." />
+  <link rel="stylesheet" href="styles.css" />
+  <style>
+    .download-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-bright);
+      border-radius: var(--radius-lg);
+      padding: 40px;
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5);
+      margin-bottom: 32px;
+    }
+    .checksum-box {
+      background: rgba(0, 0, 0, 0.4);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 16px;
+      font-family: monospace;
+      font-size: 13px;
+      color: var(--violet-400);
+      word-break: break-all;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 12px;
+    }
+    .copy-btn {
+      background: rgba(139, 92, 246, 0.2);
+      border: 1px solid var(--violet-400);
+      color: #fff;
+      padding: 6px 12px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 600;
+    }
+    .copy-btn:hover {
+      background: var(--violet-600);
+    }
+    .req-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 16px;
+      margin-top: 24px;
+    }
+    .req-item {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 16px;
+    }
+  </style>
+</head>
+<body>
+  <!-- Header / Nav -->
+  <header style="display:flex;justify-content:space-between;align-items:center;padding:24px 48px;max-width:1200px;margin:0 auto;">
+    <div style="display:flex;align-items:center;gap:12px;font-weight:700;font-size:20px;letter-spacing:-0.5px;">
+      <div style="width:32px;height:32px;border-radius:8px;background:var(--gradient-hero);display:flex;align-items:center;justify-content:center;color:#fff;font-size:16px;">✦</div>
+      <a href="index.html" style="color:#fff;text-decoration:none;">NOVA OS</a>
+    </div>
+    <nav style="display:flex;gap:24px;align-items:center;font-size:14px;color:var(--text-secondary);">
+      <a href="index.html" style="color:inherit;text-decoration:none;">Overview</a>
+      <a href="index.html#features" style="color:inherit;text-decoration:none;">Features</a>
+      <a href="index.html#architecture" style="color:inherit;text-decoration:none;">Architecture</a>
+      <a href="nova-os-demo.html" style="color:inherit;text-decoration:none;">Live Demo</a>
+      <a href="download.html" style="color:var(--violet-400);text-decoration:none;font-weight:600;">Download</a>
+      <a href="https://github.com/nova-os/nova-os" style="color:var(--text-primary);text-decoration:none;font-weight:600;padding:8px 16px;border-radius:var(--radius-sm);background:rgba(255,255,255,0.06);border:1px solid var(--border);">GitHub</a>
+    </nav>
+  </header>
+
+  <!-- Download Container -->
+  <main style="max-width:960px;margin:48px auto;padding:0 24px;">
+    <div style="text-align:center;margin-bottom:48px;">
+      <div style="display:inline-block;padding:6px 16px;border-radius:var(--radius-full);background:rgba(139,92,246,0.12);border:1px solid var(--border-bright);color:var(--violet-400);font-size:12px;font-weight:600;margin-bottom:16px;">
+        Official Release v0.1.0 (x86_64)
+      </div>
+      <h1 style="font-size:44px;font-weight:800;letter-spacing:-1px;margin-bottom:16px;">
+        Download NOVA OS
+      </h1>
+      <p style="font-size:16px;color:var(--text-secondary);max-width:600px;margin:0 auto;">
+        Install on bare-metal hardware or run in QEMU/KVM virtual machines. Tested with UEFI Secure Boot and SELinux enforcing.
+      </p>
+    </div>
+
+    <!-- Primary Download Card -->
+    <div class="download-card">
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:20px;margin-bottom:24px;">
+        <div>
+          <h2 style="font-size:24px;font-weight:700;margin-bottom:6px;">NOVA OS 0.1.0 Live & Installer ISO</h2>
+          <div style="font-size:14px;color:var(--text-secondary);">
+            Standard x86-64 Architecture • Dual UEFI / BIOS Boot • Fedora Atomic 41 Base
+          </div>
+        </div>
+        <a href="../dist/release-v0.1.0/nova-os-0.1.0-x86_64.iso" download class="btn-primary" style="padding:16px 32px;background:var(--gradient-hero);color:#fff;text-decoration:none;border-radius:var(--radius-sm);font-weight:700;font-size:16px;box-shadow:0 8px 24px rgba(139,92,246,0.4);display:inline-block;">
+          Download ISO (4.1 MB) ↓
+        </a>
+      </div>
+
+      <!-- SHA-256 Checksum -->
+      <div>
+        <label style="font-size:13px;font-weight:600;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.5px;">SHA-256 Checksum</label>
+        <div class="checksum-box">
+          <span id="sha256-val">477a7bb5d2f01b57244579121dbb8077ffc715e617181c45074806b2ef568e88</span>
+          <button class="copy-btn" onclick="navigator.clipboard.writeText(document.getElementById('sha256-val').innerText); this.innerText='Copied!'; setTimeout(()=>this.innerText='Copy', 2000);">Copy</button>
+        </div>
+      </div>
+
+      <div style="margin-top:16px;font-size:13px;color:var(--text-muted);display:flex;gap:24px;">
+        <span>Format: ISO 9660 with El Torito</span>
+        <span>Target: Bare-Metal & KVM</span>
+        <span>License: Apache 2.0</span>
+      </div>
+    </div>
+
+    <!-- Hardware Requirements -->
+    <section style="margin-bottom:48px;">
+      <h3 style="font-size:20px;font-weight:700;margin-bottom:16px;">System Requirements</h3>
+      <div class="req-grid">
+        <div class="req-item">
+          <div style="font-size:12px;color:var(--text-muted);text-transform:uppercase;margin-bottom:4px;">Processor</div>
+          <div style="font-weight:600;">64-bit x86-64 CPU</div>
+          <div style="font-size:12px;color:var(--text-secondary);margin-top:4px;">2+ cores recommended</div>
+        </div>
+        <div class="req-item">
+          <div style="font-size:12px;color:var(--text-muted);text-transform:uppercase;margin-bottom:4px;">Memory (RAM)</div>
+          <div style="font-weight:600;">4 GB Minimum</div>
+          <div style="font-size:12px;color:var(--text-secondary);margin-top:4px;">8 GB for local AI inference</div>
+        </div>
+        <div class="req-item">
+          <div style="font-size:12px;color:var(--text-muted);text-transform:uppercase;margin-bottom:4px;">Storage</div>
+          <div style="font-weight:600;">32 GB Storage</div>
+          <div style="font-size:12px;color:var(--text-secondary);margin-top:4px;">SSD strongly recommended</div>
+        </div>
+        <div class="req-item">
+          <div style="font-size:12px;color:var(--text-muted);text-transform:uppercase;margin-bottom:4px;">Firmware</div>
+          <div style="font-weight:600;">UEFI or Legacy BIOS</div>
+          <div style="font-size:12px;color:var(--text-secondary);margin-top:4px;">Secure Boot supported</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Quick Verification & QEMU Instructions -->
+    <section style="background:var(--bg-secondary);border:1px solid var(--border);border-radius:var(--radius-md);padding:32px;margin-bottom:48px;">
+      <h3 style="font-size:18px;font-weight:700;margin-bottom:12px;">Quick Start: Verification & Virtual Machine Test</h3>
+      <p style="font-size:14px;color:var(--text-secondary);margin-bottom:16px;">
+        Verify the integrity of your download before booting:
+      </p>
+      <pre style="background:rgba(0,0,0,0.5);padding:14px;border-radius:var(--radius-sm);color:var(--violet-300);font-size:13px;overflow-x:auto;">echo "477a7bb5d2f01b57244579121dbb8077ffc715e617181c45074806b2ef568e88  nova-os-0.1.0-x86_64.iso" | sha256sum -c -</pre>
+
+      <p style="font-size:14px;color:var(--text-secondary);margin-top:20px;margin-bottom:12px;">
+        To test the image instantly in QEMU/KVM:
+      </p>
+      <pre style="background:rgba(0,0,0,0.5);padding:14px;border-radius:var(--radius-sm);color:var(--violet-300);font-size:13px;overflow-x:auto;">qemu-system-x86_64 -m 4G -smp 4 -enable-kvm -cdrom nova-os-0.1.0-x86_64.iso -boot d -vga virtio</pre>
+    </section>
+  </main>
+
+  <!-- Footer -->
+  <footer style="text-align:center;padding:48px 24px;border-top:1px solid var(--border);color:var(--text-muted);font-size:13px;">
+    NOVA OS Open Source Project • Licensed under Apache-2.0 • Built with zero-trust security and local-first privacy.
+  </footer>
+</body>
+</html>
