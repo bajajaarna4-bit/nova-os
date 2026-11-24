@@ -114,12 +114,27 @@ pub async fn parse_total_memory() -> Option<u64> {
 
 #[cfg(not(target_os = "linux"))]
 async fn gather_mock() -> Result<SystemInfo> {
+    use sysinfo::System;
+    let mut sys = System::new_all();
+    sys.refresh_all();
+
+    let hostname = System::host_name().unwrap_or_else(|| "unknown-host".to_string());
+    let kernel_version = System::kernel_version().unwrap_or_else(|| "unknown-kernel".to_string());
+    let os_version = System::os_version().unwrap_or_else(|| "NOVA Dev Environment".to_string());
+    let uptime_seconds = System::uptime();
+    let cpu_model = sys
+        .cpus()
+        .first()
+        .map(|c| c.brand().to_string())
+        .unwrap_or_else(|| "Generic CPU".to_string());
+    let total_memory_bytes = sys.total_memory();
+
     Ok(SystemInfo {
-        hostname: "nova-dev".to_string(),
-        kernel_version: "6.12.0-mock".to_string(),
-        os_version: "NOVA OS 0.1.0 (dev-mock)".to_string(),
-        uptime_seconds: 3600,
-        cpu_model: "Mock CPU @ 3.00GHz".to_string(),
-        total_memory_bytes: 8 * 1024 * 1024 * 1024,
+        hostname,
+        kernel_version,
+        os_version,
+        uptime_seconds,
+        cpu_model,
+        total_memory_bytes,
     })
 }

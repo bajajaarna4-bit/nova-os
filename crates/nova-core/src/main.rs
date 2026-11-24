@@ -3,7 +3,9 @@
 use anyhow::Result;
 use nova_core::{resource_monitor, system_info};
 use nova_system_api::{ResourceUsage, ServiceState, ServiceStatus, SystemInfo};
-use tracing::{error, info};
+#[cfg(unix)]
+use tracing::error;
+use tracing::info;
 use tracing_subscriber::EnvFilter;
 
 #[cfg(unix)]
@@ -137,7 +139,13 @@ async fn main() -> Result<()> {
     {
         info!("Running nova-core in standalone mode (non-Linux platform)");
         let info = service.get_system_info_impl().await?;
-        info!("System info gathered: {:?}", info);
+        let res = service.get_resource_usage_impl().await?;
+        let svc = service.get_service_status_impl("systemd").await;
+        let cfg = nova_core::NovaConfig::load_default_or_fallback();
+        info!("System info: {:?}", info);
+        info!("Resource usage: CPU {:.1}%, RAM {}/{} MB", res.cpu_percent, res.memory_used_bytes / (1024 * 1024), res.memory_total_bytes / (1024 * 1024));
+        info!("Service check for systemd: {:?}", svc.state);
+        info!("OS Config active theme: {}", cfg.desktop.theme);
         tokio::signal::ctrl_c().await?;
         info!("Received Ctrl-C, shutting down");
     }

@@ -2,6 +2,7 @@
 
 use anyhow::Result;
 use nova_audit::AuditLogger;
+#[cfg(unix)]
 use nova_system_api::{AuditEvent, AuditEventType, AuditOutcome};
 use nova_updater::UpdateManager;
 use std::sync::Arc;
@@ -82,7 +83,12 @@ async fn main() -> Result<()> {
     {
         info!("Running nova-updater in standalone mode (non-Linux platform)");
         let info = service.manager.check_for_updates()?;
+        let history = service.manager.get_history();
+        let test_payload = b"NOVA-IMAGE-SAMPLE";
+        let valid = service.manager.verify_payload_checksum(test_payload, "dummy");
         info!("Update status: {:?}", info);
+        info!("History entries: {}, Payload test: {}", history.len(), valid);
+        info!("Audit logger initialized at: {:?}", service.audit.log_path());
         tokio::signal::ctrl_c().await?;
         info!("Ctrl-C received, shutting down");
     }

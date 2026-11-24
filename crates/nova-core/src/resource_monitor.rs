@@ -98,10 +98,20 @@ async fn estimate_cpu_percent() -> Option<f64> {
 
 #[cfg(not(target_os = "linux"))]
 async fn collect_mock() -> Result<ResourceUsage> {
+    use sysinfo::System;
+    let mut sys = System::new_all();
+    sys.refresh_all();
+    tokio::time::sleep(std::time::Duration::from_millis(100)).await;
+    sys.refresh_all();
+
+    let cpu_percent = sys.global_cpu_info().cpu_usage() as f64;
+    let memory_total_bytes = sys.total_memory();
+    let memory_used_bytes = sys.used_memory();
+
     Ok(ResourceUsage {
-        cpu_percent: 12.5,
-        memory_used_bytes: 2 * 1024 * 1024 * 1024,
-        memory_total_bytes: 8 * 1024 * 1024 * 1024,
-        load_average_1m: 0.75,
+        cpu_percent,
+        memory_used_bytes,
+        memory_total_bytes,
+        load_average_1m: 0.0,
     })
 }

@@ -45,4 +45,14 @@ impl UpdateManager {
             success: true,
         }]
     }
+
+    /// Cryptographically verify the SHA256 checksum of an atomic image payload.
+    pub fn verify_payload_checksum(&self, payload: &[u8], expected_sha256: &str) -> bool {
+        use sha2::{Digest, Sha256};
+        let mut hasher = Sha256::new();
+        hasher.update(payload);
+        let result = hasher.finalize();
+        let calculated = hex::encode(result);
+        calculated.eq_ignore_ascii_case(expected_sha256)
+    }
 }

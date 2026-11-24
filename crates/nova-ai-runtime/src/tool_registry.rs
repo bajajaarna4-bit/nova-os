@@ -43,6 +43,10 @@ impl ToolRegistry {
         self.tools.contains_key(tool_name)
     }
 
+    pub fn list_tools(&self) -> Vec<String> {
+        self.tools.keys().cloned().collect()
+    }
+
     pub fn execute(&self, call: &AIToolCall, permission_granted: bool) -> AIToolResult {
         if !permission_granted {
             warn!("Execution of tool '{}' denied: missing permission", call.tool_name);

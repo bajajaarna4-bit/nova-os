@@ -7,6 +7,7 @@ use tokio::fs::{self, OpenOptions};
 use tokio::io::AsyncWriteExt;
 use tracing::{error, info};
 
+#[derive(Debug)]
 pub struct AuditLogger {
     log_path: PathBuf,
 }

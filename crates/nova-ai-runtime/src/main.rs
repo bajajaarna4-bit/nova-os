@@ -126,6 +126,10 @@ async fn main() -> Result<()> {
         info!("Running nova-ai-runtime in standalone mode (non-Linux platform)");
         let response = service.process_query_impl("system check").await;
         info!("AI Runtime self-test response: {}", response);
+        if let Ok(tool_res) = service.execute_tool_impl("inspect_system_hardware", "{}").await {
+            info!("Self-test tool execution: {}", tool_res);
+        }
+        info!("Tool registry tools: {:?}", service.registry.read().await.list_tools());
         tokio::signal::ctrl_c().await?;
         info!("Ctrl-C received, shutting down");
     }

@@ -140,7 +140,10 @@ async fn main() -> Result<()> {
     {
         info!("Running nova-security in standalone mode (non-Linux platform)");
         let status = service.get_security_status_impl().await;
+        let procs = service.get_process_list_impl().await;
+        let fw = service.get_firewall_status_impl().await;
         info!("Security posture: {:?}", status);
+        info!("Active processes monitored: {}, Firewall active: {}", procs.len(), fw.active);
         tokio::signal::ctrl_c().await?;
         info!("Ctrl-C received, shutting down");
     }

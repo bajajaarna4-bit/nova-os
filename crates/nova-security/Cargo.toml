@@ -19,9 +19,7 @@ serde_json = { workspace = true }
 tracing = { workspace = true }
 tracing-subscriber = { workspace = true }
 anyhow = { workspace = true }
-thiserror = { workspace = true }
 nova-system-api = { path = "../nova-system-api" }
-nova-audit = { path = "../nova-audit" }
 
 [target.'cfg(unix)'.dependencies]
 zbus = { workspace = true }

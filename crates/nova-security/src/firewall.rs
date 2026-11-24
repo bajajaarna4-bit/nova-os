@@ -1,6 +1,7 @@
 // nova-security/src/firewall.rs — Firewall status reader (nftables/iptables)
 
 use nova_system_api::FirewallStatus;
+#[cfg(target_os = "linux")]
 use tokio::process::Command;
 
 /// Query firewall status via nftables or iptables.
